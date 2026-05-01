@@ -16,10 +16,14 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Deploy to CloudBase Hosting
-        run: |
-          npx @cloudbase/cli login --apiKeyId "$SECRET_ID" --apiKey "$SECRET_KEY"
-          npx @cloudbase/cli hosting deploy . / -e kids-education-d8gak4uog7d6f09fa --delete
+      - name: Install CloudBase CLI
+        run: npm install -g @cloudbase/cli
+
+      - name: Login to CloudBase
+        run: tcb login --apiKeyId "$TENCENT_SECRET_ID" --apiKey "$TENCENT_SECRET_KEY"
         env:
-          SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
-          SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
+          TENCENT_SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
+          TENCENT_SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
+
+      - name: Deploy to Hosting
+        run: tcb hosting deploy . / -e kids-education-d8gak4uog7d6f09fa
