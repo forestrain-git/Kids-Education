@@ -197,86 +197,121 @@ var Engine = {
     const state = Storage.getState();
     const recommended = [];
     const usedIds = new Set();
+    const NODE_LIMIT = 10; // 每个知识点最多出10题
 
-    // 1. 艾宾浩斯复习
+    // 收集各知识点的错题
+    const wrongByNode = {};
+    state.wrongQuestions.forEach(id => {
+      const q = ALL_QUESTIONS.find(q => q.id === id);
+      if (q && !usedIds.has(q.id)) {
+        if (!wrongByNode[q.knowledge_node_id]) wrongByNode[q.knowledge_node_id] = [];
+        wrongByNode[q.knowledge_node_id].push(q);
+      }
+    });
+
+    // 确定知识点优先级队列（专项顺序）
+    const nodeQueue = [];
+    const added = new Set();
+
+    // 1) 艾宾浩斯到期
     const dueNodes = this.getDueReviews();
     for (const nodeId of dueNodes) {
-      const questions = ALL_QUESTIONS.filter(q => q.knowledge_node_id === nodeId && !usedIds.has(q.id));
-      if (questions.length > 0) {
-        const q = questions[Math.floor(Math.random() * questions.length)];
-        recommended.push({ ...q, reason: '复习' });
-        usedIds.add(q.id);
+      if (!added.has(nodeId)) { nodeQueue.push(nodeId); added.add(nodeId); }
+    }
+
+    // 2) 有错题的知识点（按错题数量倒序）
+    const wrongNodeIds = Object.entries(wrongByNode)
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([id]) => id);
+    for (const nodeId of wrongNodeIds) {
+      if (!added.has(nodeId)) { nodeQueue.push(nodeId); added.add(nodeId); }
+    }
+
+    // 3) ZPD 知识点（掌握度20-80，按掌握度升序）
+    const zpdNodes = Object.entries(state.mastery)
+      .filter(([_, m]) => m.score >= 20 && m.score <= 80)
+      .sort((a, b) => a[1].score - b[1].score)
+      .map(([id]) => id);
+    for (const nodeId of zpdNodes) {
+      if (!added.has(nodeId)) { nodeQueue.push(nodeId); added.add(nodeId); }
+    }
+
+    // 4) 全新知识点（未学过的）
+    const learnedNodes = new Set(Object.keys(state.mastery));
+    const newNodes = KNOWLEDGE_NODES.map(n => n.id).filter(id => !learnedNodes.has(id));
+    for (const nodeId of newNodes) {
+      if (!added.has(nodeId)) { nodeQueue.push(nodeId); added.add(nodeId); }
+    }
+
+    // 获取每个知识点的优先题型（根据做题标签统计）
+    const nodePriority = {};
+    const easyNodes = new Set();
+    nodeQueue.forEach(nodeId => {
+      const stats = state.tagStats[nodeId] || {};
+      const entries = Object.entries(stats).filter(([tag]) => TAG_TO_QUESTION_TYPE[tag]);
+      if (entries.length > 0) {
+        entries.sort((a, b) => b[1] - a[1]);
+        nodePriority[nodeId] = TAG_TO_QUESTION_TYPE[entries[0][0]];
+        if (entries[0][0] === '完全不会') easyNodes.add(nodeId);
       }
+    });
+
+    // 按知识点集中出题
+    for (const nodeId of nodeQueue) {
       if (recommended.length >= count) break;
-    }
+      const block = [];
+      const nodeUsed = new Set();
 
-    // 2. 错题复练
-    if (recommended.length < count) {
-      const wrongQs = state.wrongQuestions
-        .map(id => ALL_QUESTIONS.find(q => q.id === id))
-        .filter(q => q && !usedIds.has(q.id));
+      // a) 复习题（艾宾浩斯）
+      if (dueNodes.includes(nodeId)) {
+        const qs = ALL_QUESTIONS.filter(q => q.knowledge_node_id === nodeId && !usedIds.has(q.id));
+        if (qs.length > 0) {
+          const q = qs[Math.floor(Math.random() * qs.length)];
+          block.push({ ...q, reason: '复习' });
+          nodeUsed.add(q.id);
+        }
+      }
+
+      // b) 错题
+      const wrongQs = (wrongByNode[nodeId] || []).filter(q => !nodeUsed.has(q.id));
       wrongQs.sort(() => Math.random() - 0.5);
-      for (const q of wrongQs.slice(0, count - recommended.length)) {
-        recommended.push({ ...q, reason: '错题' });
+      for (const q of wrongQs) {
+        if (block.length >= NODE_LIMIT) break;
+        block.push({ ...q, reason: '错题' });
+        nodeUsed.add(q.id);
+      }
+
+      // c) 新题（ZPD 或 新知识点）
+      if (block.length < NODE_LIMIT) {
+        const qs = ALL_QUESTIONS.filter(q =>
+          q.knowledge_node_id === nodeId && !usedIds.has(q.id) && !nodeUsed.has(q.id)
+        );
+        // 排序：优先题型匹配 > 非完全不会知识点按难度升序
+        qs.sort((a, b) => {
+          const pa = nodePriority[a.knowledge_node_id];
+          const pb = nodePriority[b.knowledge_node_id];
+          const ha = pa && a.tags && a.tags.includes(pa) ? 2 : 0;
+          const hb = pb && b.tags && b.tags.includes(pb) ? 2 : 0;
+          const ea = easyNodes.has(a.knowledge_node_id) ? a.difficulty : 0;
+          const eb = easyNodes.has(b.knowledge_node_id) ? b.difficulty : 0;
+          return (hb + (3 - eb)) - (ha + (3 - ea));
+        });
+        for (const q of qs) {
+          if (block.length >= NODE_LIMIT) break;
+          block.push({ ...q, reason: learnedNodes.has(nodeId) ? '挑战' : '新题' });
+          nodeUsed.add(q.id);
+        }
+      }
+
+      // 将本知识点题目加入总列表
+      for (const q of block) {
+        if (recommended.length >= count) break;
+        recommended.push(q);
         usedIds.add(q.id);
       }
     }
 
-    // 3. ZPD 题目（基于标签调整题型）
-    if (recommended.length < count) {
-      let zpdNodes = Object.entries(state.mastery)
-        .filter(([_, m]) => m.score >= 20 && m.score <= 80)
-        .map(([id]) => id);
-
-      if (zpdNodes.length === 0) {
-        const learnedNodes = new Set(Object.keys(state.mastery));
-        zpdNodes = KNOWLEDGE_NODES.map(n => n.id).filter(id => !learnedNodes.has(id));
-      }
-
-      // 获取每个知识点的优先题型（根据做题标签统计）
-      const nodePriority = {};
-      zpdNodes.forEach(nodeId => {
-        const stats = state.tagStats[nodeId] || {};
-        const entries = Object.entries(stats).filter(([tag]) => TAG_TO_QUESTION_TYPE[tag]);
-        if (entries.length > 0) {
-          entries.sort((a, b) => b[1] - a[1]);
-          nodePriority[nodeId] = TAG_TO_QUESTION_TYPE[entries[0][0]];
-        }
-      });
-
-      // 获取需要降难度的知识点（完全不会标签最多）
-      const easyNodes = new Set();
-      zpdNodes.forEach(nodeId => {
-        const stats = state.tagStats[nodeId] || {};
-        const entries = Object.entries(stats);
-        if (entries.length > 0) {
-          entries.sort((a, b) => b[1] - a[1]);
-          if (entries[0][0] === '完全不会') easyNodes.add(nodeId);
-        }
-      });
-
-      let candidates = ALL_QUESTIONS.filter(q => zpdNodes.includes(q.knowledge_node_id) && !usedIds.has(q.id));
-
-      // 按标签匹配度和难度排序：匹配优先题型 > 非降难度知识点 > 随机
-      candidates.sort((a, b) => {
-        const pa = nodePriority[a.knowledge_node_id];
-        const pb = nodePriority[b.knowledge_node_id];
-        const ha = pa && a.tags.includes(pa) ? 2 : 0;
-        const hb = pb && b.tags.includes(pb) ? 2 : 0;
-
-        const ea = easyNodes.has(a.knowledge_node_id) ? a.difficulty : 0;
-        const eb = easyNodes.has(b.knowledge_node_id) ? b.difficulty : 0;
-
-        return (hb + (3 - eb)) - (ha + (3 - ea));
-      });
-
-      for (const q of candidates.slice(0, count - recommended.length)) {
-        recommended.push({ ...q, reason: '挑战' });
-        usedIds.add(q.id);
-      }
-    }
-
-    // 4. 补充新题
+    // 兜底：如果还不够，随机补充
     if (recommended.length < count) {
       const remaining = ALL_QUESTIONS.filter(q => !usedIds.has(q.id));
       remaining.sort(() => Math.random() - 0.5);
