@@ -2,12 +2,6 @@
 
 八年级物理自适应学习网页应用，专为物理薄弱学生设计。
 
-## 在线访问
-
-- **学生端（GitHub Pages）**：https://forestrain-git.github.io/Kids-Education/
-- **学生端（Vercel）**：https://kids-education-eight.vercel.app/
-- **家长看板**：https://forestrain-git.github.io/Kids-Education/parent.html
-
 ## 核心功能
 
 - **自适应推荐**：根据掌握度动态推送"比能力高一点点"的题目
