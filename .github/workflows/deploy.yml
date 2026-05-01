@@ -7,27 +7,34 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 3
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+      - name: Debug env
+        run: |
+          echo "Node version:"
+          node --version
+          echo "NPM version:"
+          npm --version
+          echo "Secrets set check:"
+          if [ -n "${{ secrets.TENCENT_SECRET_ID }}" ]; then echo "SECRET_ID is set"; else echo "SECRET_ID is NOT set"; fi
+          if [ -n "${{ secrets.TENCENT_SECRET_KEY }}" ]; then echo "SECRET_KEY is set"; else echo "SECRET_KEY is NOT set"; fi
 
       - name: Install CloudBase CLI
-        run: npm install -g @cloudbase/cli
-
-      - name: Login and Deploy
-        env:
-          TENCENT_SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
-          TENCENT_SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
         run: |
-          echo "Logging in to CloudBase..."
-          tcb login --apiKeyId "$TENCENT_SECRET_ID" --apiKey "$TENCENT_SECRET_KEY" --non-interactive 2>&1 || true
-          echo "Checking login status..."
-          tcb env:list 2>&1 || true
-          echo "Deploying..."
-          tcb hosting deploy . -e kids-education-d8gak4uog7d6f09fa --yes 2>&1 || true
+          echo "Installing @cloudbase/cli..."
+          npm install -g @cloudbase/cli
+          echo "Installed. Version:"
+          tcb --version || cloudbase --version
+
+      - name: Login to CloudBase
+        run: |
+          echo "Attempting login..."
+          tcb login --apiKeyId "${{ secrets.TENCENT_SECRET_ID }}" --apiKey "${{ secrets.TENCENT_SECRET_KEY }}" 2>&1 || echo "Login exit code: $?"
+
+      - name: Deploy to CloudBase Hosting
+        run: |
+          echo "Attempting deploy..."
+          tcb hosting deploy . -e kids-education-d8gak4uog7d6f09fa 2>&1 || echo "Deploy exit code: $?"
