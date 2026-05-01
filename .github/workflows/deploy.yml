@@ -28,4 +28,4 @@ jobs:
 
           # 登录并部署
           cloudbase login --apiKeyId "$SECRET_ID" --apiKey "$SECRET_KEY"
-          cloudbase hosting deploy _deploy -e kids-education-d8gak4uog7d6f09fa --yes
+          cloudbase hosting deploy _deploy / -e kids-education-d8gak4uog7d6f09fa --yes
