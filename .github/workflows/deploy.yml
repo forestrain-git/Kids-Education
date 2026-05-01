@@ -19,11 +19,8 @@ jobs:
       - name: Install CloudBase CLI
         run: npm install -g @cloudbase/cli
 
-      - name: Login to CloudBase
-        run: tcb login --apiKeyId "$TENCENT_SECRET_ID" --apiKey "$TENCENT_SECRET_KEY"
+      - name: Deploy to Hosting
+        run: tcb hosting deploy . / -e kids-education-d8gak4uog7d6f09fa
         env:
           TENCENT_SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
           TENCENT_SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
-
-      - name: Deploy to Hosting
-        run: tcb hosting deploy . / -e kids-education-d8gak4uog7d6f09fa
