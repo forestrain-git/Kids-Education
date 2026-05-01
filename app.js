@@ -526,13 +526,8 @@ var UI = {
       }
     });
 
-    // 更换提交按钮为查看解析
-    const submitBtn = document.getElementById('submit-btn');
-    if (submitBtn) {
-      submitBtn.textContent = '查看解析';
-      submitBtn.disabled = false;
-      submitBtn.onclick = () => this.showExplanation(q, correct, selectedText);
-    }
+    // 直接显示解析
+    this.showExplanation(q, correct, selectedText);
   },
 
   showExplanation(q, correct, selectedText) {
