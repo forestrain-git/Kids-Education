@@ -11,10 +11,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to CloudBase Hosting
-        uses: TencentCloudBase/cloudbase-action@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          secretId: ${{ secrets.TENCENT_SECRET_ID }}
-          secretKey: ${{ secrets.TENCENT_SECRET_KEY }}
-          envId: kids-education-d8gak4uog7d6f09fa
-          staticSrcPath: .
+          node-version: '22'
+
+      - name: Install CloudBase CLI
+        run: npm install -g @cloudbase/cli
+
+      - name: Login to CloudBase
+        run: |
+          tcb login --apiKeyId "${{ secrets.TENCENT_SECRET_ID }}" --apiKey "${{ secrets.TENCENT_SECRET_KEY }}"
+
+      - name: Deploy to CloudBase Hosting
+        run: |
+          tcb hosting deploy . -e kids-education-d8gak4uog7d6f09fa
