@@ -1165,4 +1165,529 @@ var EXTRA_QUESTIONS = [
     explanation: '气垫船向下喷气，在船底和水面之间形成气垫，使船底脱离水面，大大减小了水的阻力。',
     hints: ['气垫船和普通船最大的区别是什么？', '气垫船不直接接触水面。', '气垫船向下喷气，在船底和水面之间形成气垫，使船底脱离水面，大大减小了水的阻力。']
   },
+
+  // === 第二轮补充题（ex_124 ~ ex_177）===
+
+  // ---- 机械运动 ----
+  {
+    id: 'ex_124', knowledge_node_id: 'motion_measurement', chapter: '机械运动', section: '长度和时间的测量',
+    difficulty: 1, type: 'choice',
+    content: '下列长度单位换算正确的是？',
+    options: ['1m = 10cm', '1km = 100m', '1m = 1000mm', '1dm = 100cm'],
+    answer: '1m = 1000mm',
+    explanation: '1m = 10dm = 100cm = 1000mm；1km = 1000m。',
+    hints: ['1米等于多少厘米？', '1米=100厘米=1000毫米。', '1m = 10dm = 100cm = 1000mm；1km = 1000m。']
+  },
+  {
+    id: 'ex_125', knowledge_node_id: 'motion_measurement', chapter: '机械运动', section: '长度和时间的测量',
+    difficulty: 2, type: 'choice',
+    content: '用刻度尺测量物体长度时，读数应读到？',
+    options: ['整厘米', '毫米', '厘米的下一位', '米的下一位'],
+    answer: '厘米的下一位',
+    explanation: '测量读数应估读到分度值的下一位。刻度尺分度值通常是1mm，所以要读到毫米的下一位（0.1mm）。',
+    hints: ['刻度尺上1cm分成了几小格？', '10小格，每格1mm。', '测量读数应估读到分度值的下一位。']
+  },
+  {
+    id: 'ex_126', knowledge_node_id: 'motion_reference', chapter: '机械运动', section: '参照物',
+    difficulty: 2, type: 'choice',
+    content: '小明坐在行驶的公交车上，看到路边的树向后运动，他选择的参照物是？',
+    options: ['地面', '树', '公交车', '路灯'],
+    answer: '公交车',
+    explanation: '树向后运动，说明参照物在向前运动。小明以自己乘坐的公交车为参照物，树相对于公交车向后运动。',
+    hints: ['什么在向前运动，树看起来才会向后运动？', '公交车在向前运动。', '以自己乘坐的公交车为参照物，路边的树看起来向后运动。']
+  },
+  {
+    id: 'ex_127', knowledge_node_id: 'motion_reference', chapter: '机械运动', section: '参照物',
+    difficulty: 2, type: 'choice',
+    content: '两位同学并肩走在操场上，以其中一位同学为参照物，另一位同学是？',
+    options: ['运动的', '静止的', '有时运动有时静止', '无法判断'],
+    answer: '静止的',
+    explanation: '并肩行走时，两人速度相同，相对位置不变，所以以其中一位为参照物，另一位是静止的。',
+    hints: ['并肩走，两人之间的距离变吗？', '距离不变。', '相对位置不变，所以是静止的。']
+  },
+  {
+    id: 'ex_128', knowledge_node_id: 'motion_speed', chapter: '机械运动', section: '速度',
+    difficulty: 2, type: 'choice',
+    content: '甲车速度为72km/h，乙车速度为20m/s，两车相比？',
+    options: ['甲车快', '乙车快', '一样快', '无法比较'],
+    answer: '乙车快',
+    explanation: '72km/h = 72000m/3600s = 20m/s。所以甲车速度也是20m/s，两车一样快。',
+    hints: ['把km/h换算成m/s，怎么算？', '72km/h = 72÷3.6 m/s = 20m/s。', '72km/h = 20m/s，两车速度相同。']
+  },
+  {
+    id: 'ex_129', knowledge_node_id: 'motion_speed', chapter: '机械运动', section: '速度',
+    difficulty: 2, type: 'choice',
+    content: '一个物体做匀速直线运动，5秒内通过25米的路程，则它的速度是？',
+    options: ['5m/s', '20m/s', '125m/s', '0.2m/s'],
+    answer: '5m/s',
+    explanation: 'v = s/t = 25m/5s = 5m/s。',
+    hints: ['速度等于什么除以什么？', '路程除以时间。', 'v = 25÷5 = 5m/s。']
+  },
+  {
+    id: 'ex_130', knowledge_node_id: 'motion_avg_speed', chapter: '机械运动', section: '平均速度测量',
+    difficulty: 2, type: 'choice',
+    content: '测小车平均速度时，斜面坡度应？',
+    options: ['尽量大', '尽量小', '适中', '任意'],
+    answer: '尽量小',
+    explanation: '斜面坡度尽量小，小车下滑速度慢，便于计时，减小时间测量的误差。',
+    hints: ['坡度大，小车滑得快还是慢？', '滑得快，来不及计时。', '坡度小，小车下滑慢，便于计时。']
+  },
+  {
+    id: 'ex_131', knowledge_node_id: 'motion_avg_speed', chapter: '机械运动', section: '平均速度测量',
+    difficulty: 2, type: 'choice',
+    content: '小车从斜面顶端滑下，上半段平均速度为v1，下半段为v2，全程为v，则？',
+    options: ['v1>v2>v', 'v2>v>v1', 'v=v1=v2', 'v1>v>v2'],
+    answer: 'v2>v>v1',
+    explanation: '小车做加速运动，下半段速度比上半段大。全程平均速度介于上半段和下半段之间。',
+    hints: ['小车下滑时速度越来越快还是越来越慢？', '越来越快。', '下半段速度最大，全程平均速度居中。']
+  },
+
+  // ---- 声现象 ----
+  {
+    id: 'ex_132', knowledge_node_id: 'sound_production', chapter: '声现象', section: '声音的产生与传播',
+    difficulty: 1, type: 'choice',
+    content: '声音在下列哪种介质中传播最快？',
+    options: ['空气', '水', '钢铁', '真空'],
+    answer: '钢铁',
+    explanation: '声音在固体中传播最快，液体次之，气体最慢。真空不能传声。',
+    hints: ['声音传播需要什么？', '需要介质。', '固体中声速最快，钢铁是固体。']
+  },
+  {
+    id: 'ex_133', knowledge_node_id: 'sound_production', chapter: '声现象', section: '声音的产生与传播',
+    difficulty: 2, type: 'choice',
+    content: '登上月球的宇航员面对面也需要借助无线电交谈，是因为？',
+    options: ['月球上没有空气，真空不能传声', '宇航服挡住了声音', '月球上风太大', '无线电更清晰'],
+    answer: '月球上没有空气，真空不能传声',
+    explanation: '月球表面是真空环境，没有空气作为传声介质，声音无法传播。',
+    hints: ['月球上有空气吗？', '没有空气。', '真空不能传声，所以需要无线电。']
+  },
+  {
+    id: 'ex_134', knowledge_node_id: 'sound_characteristics', chapter: '声现象', section: '声音的特性',
+    difficulty: 1, type: 'choice',
+    content: '我们根据声音的什么特征来区分钢琴和小提琴的声音？',
+    options: ['响度', '音调', '音色', '频率'],
+    answer: '音色',
+    explanation: '不同乐器发出声音的音色不同，音色由发声体的材料和结构决定。',
+    hints: ['钢琴和小提琴弹同一个音，为什么还能区分？', '因为声音的品质不同。', '不同乐器的音色不同。']
+  },
+  {
+    id: 'ex_135', knowledge_node_id: 'sound_characteristics', chapter: '声现象', section: '声音的特性',
+    difficulty: 2, type: 'choice',
+    content: '男低音歌手独唱时，由女高音歌手轻声伴唱，下列说法正确的是？',
+    options: ['男歌手音调高，响度大', '男歌手音调低，响度大', '女歌手音调低，响度小', '两人音调相同'],
+    answer: '男歌手音调低，响度大',
+    explanation: '男低音音调低，独唱时响度大；女高音音调高，伴唱时响度小。',
+    hints: ['低音意味着音调高还是低？', '音调低。', '男低音音调低，独唱时响度大。']
+  },
+  {
+    id: 'ex_136', knowledge_node_id: 'sound_utilization', chapter: '声现象', section: '声的利用',
+    difficulty: 1, type: 'choice',
+    content: '用超声波清洗眼镜，是利用了声音的什么特性？',
+    options: ['传递信息', '传递能量', '反射', '衍射'],
+    answer: '传递能量',
+    explanation: '超声波清洗利用声波的能量使污垢振动脱落，说明声音可以传递能量。',
+    hints: ['超声波把污垢振掉，说明声音做了什么？', '做了功，传递了能量。', '声音可以传递能量。']
+  },
+  {
+    id: 'ex_137', knowledge_node_id: 'sound_utilization', chapter: '声现象', section: '声的利用',
+    difficulty: 2, type: 'choice',
+    content: '医生用B超检查身体，是利用超声波的？',
+    options: ['能量高', '方向性好', '穿透能力强', '以上都是'],
+    answer: '以上都是',
+    explanation: '超声波能量高、方向性好、穿透能力强，这些特性使其适合用于医学成像。',
+    hints: ['B超成像需要超声波有什么特点？', '需要能量高、方向性好、能穿透人体。', '超声波具有这些优良特性。']
+  },
+  {
+    id: 'ex_138', knowledge_node_id: 'sound_noise', chapter: '声现象', section: '噪声的控制',
+    difficulty: 1, type: 'choice',
+    content: '在马路两旁植树，是在哪个环节控制噪声？',
+    options: ['声源处', '传播过程中', '人耳处', '以上都不是'],
+    answer: '传播过程中',
+    explanation: '植树属于在声音传播过程中设置障碍物，吸收和反射噪声，减弱声音传播。',
+    hints: ['树是种在声源旁边还是人耳旁边？', '种在路边，在传播路径上。', '在传播过程中控制噪声。']
+  },
+  {
+    id: 'ex_139', knowledge_node_id: 'sound_noise', chapter: '声现象', section: '噪声的控制',
+    difficulty: 2, type: 'choice',
+    content: '下列措施中，属于在声源处减弱噪声的是？',
+    options: ['戴耳塞', '安装隔音板', '禁止鸣笛', '关闭门窗'],
+    answer: '禁止鸣笛',
+    explanation: '禁止鸣笛直接阻止声源发声，属于在声源处减弱噪声。A和D是在人耳处，B是在传播过程中。',
+    hints: ['哪个选项是让发声体不发声？', '禁止鸣笛。', '直接阻止声源发声，属于在声源处减弱噪声。']
+  },
+
+  // ---- 物态变化 ----
+  {
+    id: 'ex_140', knowledge_node_id: 'temp_measurement', chapter: '物态变化', section: '温度',
+    difficulty: 1, type: 'choice',
+    content: '温度计玻璃泡中的液体通常是酒精或水银，这是因为它们？',
+    options: ['颜色好看', '热胀冷缩明显', '价格便宜', '容易获取'],
+    answer: '热胀冷缩明显',
+    explanation: '温度计利用液体的热胀冷缩原理工作，要求液体的热胀冷缩性质明显且稳定。',
+    hints: ['温度计是根据什么原理工作的？', '热胀冷缩。', '要求液体热胀冷缩明显。']
+  },
+  {
+    id: 'ex_141', knowledge_node_id: 'temp_measurement', chapter: '物态变化', section: '温度',
+    difficulty: 2, type: 'choice',
+    content: '体温计可以离开人体读数，是因为体温计玻璃泡和直玻璃管之间有？',
+    options: ['阀门', '缩口', '放大装置', '刻度线'],
+    answer: '缩口',
+    explanation: '体温计有缩口设计，水银受热膨胀可通过缩口上升，遇冷收缩时缩口处水银柱断开，使上方水银不能退回玻璃泡。',
+    hints: ['体温计和普通温度计结构上有什么不同？', '有个细小的弯曲处。', '缩口使水银柱断开，可以离开人体读数。']
+  },
+  {
+    id: 'ex_142', knowledge_node_id: 'phase_melt', chapter: '物态变化', section: '熔化和凝固',
+    difficulty: 2, type: 'choice',
+    content: '把一块0℃的冰放入0℃的水中（周围气温也是0℃），过一段时间后？',
+    options: ['冰变多', '水变多', '冰和水都不变', '无法判断'],
+    answer: '冰和水都不变',
+    explanation: '冰、水、环境温度都是0℃，没有温度差，不发生热传递，冰不会熔化，水也不会凝固。',
+    hints: ['熔化和凝固需要什么条件？', '需要吸热或放热。', '没有温度差就没有热传递，状态不变。']
+  },
+  {
+    id: 'ex_143', knowledge_node_id: 'phase_melt', chapter: '物态变化', section: '熔化和凝固',
+    difficulty: 2, type: 'choice',
+    content: '北方的冬天，菜窖里放几桶水，主要是利用水结冰时？',
+    options: ['放出热量', '吸收热量', '体积膨胀', '质量不变'],
+    answer: '放出热量',
+    explanation: '水结冰是凝固过程，会放出热量，使菜窖内温度不会降得太低，保护蔬菜不被冻坏。',
+    hints: ['水变成冰是吸热还是放热？', '放热。', '水凝固放热，使菜窖保温。']
+  },
+  {
+    id: 'ex_144', knowledge_node_id: 'phase_vapor', chapter: '物态变化', section: '汽化和液化',
+    difficulty: 2, type: 'choice',
+    content: '夏天打开冰箱门，门口会出现"白气"，这是因为？',
+    options: ['冰箱里的水汽出来了', '空气中的水蒸气遇冷液化', '冰箱坏了', '空气变白了'],
+    answer: '空气中的水蒸气遇冷液化',
+    explanation: '冰箱门口温度低，周围空气中的水蒸气遇冷液化成小水珠，形成"白气"。',
+    hints: ['白气是什么状态的物质？', '是小液滴。', '水蒸气遇冷液化成小水珠。']
+  },
+  {
+    id: 'ex_145', knowledge_node_id: 'phase_vapor', chapter: '物态变化', section: '汽化和液化',
+    difficulty: 2, type: 'choice',
+    content: '把酒精擦在手背上，感觉凉凉的，这是因为酒精？',
+    options: ['温度低', '蒸发吸热', '刺激皮肤', '发生了凝固'],
+    answer: '蒸发吸热',
+    explanation: '酒精蒸发时需要从皮肤吸收热量，使皮肤温度降低，所以感觉凉凉的。',
+    hints: ['酒精从液态变成气态需要什么？', '需要吸热。', '蒸发吸热，使皮肤降温。']
+  },
+  {
+    id: 'ex_146', knowledge_node_id: 'phase_sublime', chapter: '物态变化', section: '升华和凝华',
+    difficulty: 2, type: 'choice',
+    content: '冬天窗户玻璃上出现的冰花是在玻璃的哪一侧？',
+    options: ['室内一侧', '室外一侧', '玻璃中间', '两侧都有'],
+    answer: '室内一侧',
+    explanation: '室内温度较高的水蒸气遇到冰冷的玻璃，直接凝华成冰晶，附着在玻璃室内一侧。',
+    hints: ['冰花是水蒸气直接变成的，哪一侧水蒸气多？', '室内水蒸气多。', '室内水蒸气遇冷玻璃凝华。']
+  },
+  {
+    id: 'ex_147', knowledge_node_id: 'phase_sublime', chapter: '物态变化', section: '升华和凝华',
+    difficulty: 1, type: 'choice',
+    content: '下列现象中，属于凝华的是？',
+    options: ['露水的形成', '霜的形成', '雾的形成', '冰化成水'],
+    answer: '霜的形成',
+    explanation: '霜是空气中的水蒸气直接变成固态冰晶，属于凝华。露水和雾是液化，冰化成水是熔化。',
+    hints: ['凝华是气态直接变成什么态？', '固态。', '霜是水蒸气直接变成固态冰晶。']
+  },
+
+  // ---- 力与运动（薄弱知识点补充） ----
+  {
+    id: 'ex_148', knowledge_node_id: 'force_effect', chapter: '力与运动', section: '力',
+    difficulty: 1, type: 'choice',
+    content: '用力捏橡皮泥，橡皮泥的形状改变了，这说明力可以？',
+    options: ['改变物体的运动状态', '改变物体的形状', '使物体产生加速度', '使物体保持静止'],
+    answer: '改变物体的形状',
+    explanation: '力的作用效果有两种：改变物体的形状（形变）和改变物体的运动状态。捏橡皮泥是形变。',
+    hints: ['橡皮泥被捏后什么变了？', '形状变了。', '力可以改变物体的形状。']
+  },
+  {
+    id: 'ex_149', knowledge_node_id: 'force_effect', chapter: '力与运动', section: '力',
+    difficulty: 1, type: 'choice',
+    content: '运动员一脚把足球踢飞，足球由静止变为运动，这说明力可以？',
+    options: ['改变物体的形状', '改变物体的运动状态', '使物体产生重力', '使物体保持平衡'],
+    answer: '改变物体的运动状态',
+    explanation: '足球由静止变为运动，运动状态发生了改变，说明力可以改变物体的运动状态。',
+    hints: ['足球被踢之前和之后有什么不同？', '之前静止，之后运动。', '力改变了足球的运动状态。']
+  },
+  {
+    id: 'ex_150', knowledge_node_id: 'force_effect', chapter: '力与运动', section: '力',
+    difficulty: 2, type: 'choice',
+    content: '下列事例中，力改变了物体运动状态的是？',
+    options: ['用力把弹簧拉长', '把橡皮泥捏成球形', '守门员把球扑出', '把纸撕成两半'],
+    answer: '守门员把球扑出',
+    explanation: 'A、B、D都是力改变物体的形状。守门员扑球改变了球的运动方向和速度，是改变运动状态。',
+    hints: ['哪个选项是物体在动，且运动情况变了？', '球被扑出，运动方向改变。', '改变运动方向属于改变运动状态。']
+  },
+  {
+    id: 'ex_151', knowledge_node_id: 'force_effect', chapter: '力与运动', section: '力',
+    difficulty: 2, type: 'choice',
+    content: '磁铁吸引铁钉，铁钉向磁铁运动，这个过程中力改变了铁钉的？',
+    options: ['形状', '运动状态', '质量', '体积'],
+    answer: '运动状态',
+    explanation: '铁钉由静止变为运动，运动状态发生了改变，这是磁力作用的结果。',
+    hints: ['铁钉本来静止，后来呢？', '后来运动了。', '由静止变为运动，运动状态改变。']
+  },
+  {
+    id: 'ex_152', knowledge_node_id: 'force_effect', chapter: '力与运动', section: '力',
+    difficulty: 2, type: 'choice',
+    content: '把一根直铁丝弯成圆环，这个过程中力的作用效果是？',
+    options: ['改变运动状态', '改变形状', '产生热量', '没有作用效果'],
+    answer: '改变形状',
+    explanation: '把铁丝弯成圆环，铁丝的外形发生了改变，属于力改变物体的形状。',
+    hints: ['铁丝的形状变了吗？', '变了，由直变弯。', '力改变了物体的形状。']
+  },
+  {
+    id: 'ex_153', knowledge_node_id: 'gravity_calculation', chapter: '力与运动', section: '重力',
+    difficulty: 2, type: 'choice',
+    content: '一个物体质量为5kg，在地球表面它受到的重力约为？（g取10N/kg）',
+    options: ['5N', '10N', '50N', '0.5N'],
+    answer: '50N',
+    explanation: 'G = mg = 5kg × 10N/kg = 50N。',
+    hints: ['重力公式是什么？', 'G=mg。', '5×10=50N。']
+  },
+  {
+    id: 'ex_154', knowledge_node_id: 'gravity_calculation', chapter: '力与运动', section: '重力',
+    difficulty: 2, type: 'choice',
+    content: '一名中学生质量约为50kg，他受到的重力约为？（g取10N/kg）',
+    options: ['5N', '50N', '500N', '5000N'],
+    answer: '500N',
+    explanation: 'G = mg = 50kg × 10N/kg = 500N。',
+    hints: ['G=mg，代入数据计算。', '50×10=500。', '重力约为500N。']
+  },
+  {
+    id: 'ex_155', knowledge_node_id: 'gravity_calculation', chapter: '力与运动', section: '重力',
+    difficulty: 2, type: 'choice',
+    content: '月球上的重力约为地球的1/6，一个60kg的宇航员在月球上受到的重力约为？（g地取10N/kg）',
+    options: ['10N', '60N', '100N', '600N'],
+    answer: '100N',
+    explanation: '地球上重力 G = 60×10 = 600N。月球上 G月 = 600÷6 = 100N。质量不随位置改变。',
+    hints: ['先算地球上的重力？', '600N。', '月球重力是地球的1/6，600÷6=100N。']
+  },
+  {
+    id: 'ex_156', knowledge_node_id: 'gravity_calculation', chapter: '力与运动', section: '重力',
+    difficulty: 2, type: 'choice',
+    content: '一物体重200N，它的质量是多少？（g取10N/kg）',
+    options: ['2kg', '20kg', '200kg', '2000kg'],
+    answer: '20kg',
+    explanation: '由 G=mg 得 m=G/g = 200N÷10N/kg = 20kg。',
+    hints: ['已知重力求质量，公式怎么变？', 'm=G/g。', '200÷10=20kg。']
+  },
+  {
+    id: 'ex_157', knowledge_node_id: 'balance_condition', chapter: '力与运动', section: '力',
+    difficulty: 2, type: 'choice',
+    content: '一个物体受到两个力的作用，这两个力的"三要素"完全相同，则这两个力？',
+    options: ['一定是一对平衡力', '一定不是一对平衡力', '可能是一对平衡力', '无法判断'],
+    answer: '一定不是一对平衡力',
+    explanation: '平衡力要求方向相反，而三要素完全相同意味着方向也相同，所以一定不是平衡力。',
+    hints: ['平衡力的方向有什么要求？', '方向相反。', '三要素相同则方向相同，不可能平衡。']
+  },
+  {
+    id: 'ex_158', knowledge_node_id: 'balance_condition', chapter: '力与运动', section: '力',
+    difficulty: 2, type: 'choice',
+    content: '静止在水平桌面上的书本，受到的平衡力是？',
+    options: ['书本对桌面的压力和桌面对书本的支持力', '书本受到的重力和桌面对书本的支持力', '书本受到的重力和书本对桌面的压力', '以上都是'],
+    answer: '书本受到的重力和桌面对书本的支持力',
+    explanation: '平衡力必须作用在同一物体上。重力和支持力都作用在书本上，大小相等、方向相反、在同一直线上，是一对平衡力。',
+    hints: ['平衡力要作用在同一个物体上吗？', '是的。', '重力和支持力都作用在书本上，是平衡力。']
+  },
+  {
+    id: 'ex_159', knowledge_node_id: 'balance_condition', chapter: '力与运动', section: '力',
+    difficulty: 2, type: 'choice',
+    content: '用水平推力推静止在水平地面上的桌子，但没有推动，这时推力？',
+    options: ['小于摩擦力', '等于摩擦力', '大于摩擦力', '和摩擦力无关'],
+    answer: '等于摩擦力',
+    explanation: '桌子静止，处于平衡状态，水平方向推力与静摩擦力是一对平衡力，大小相等。',
+    hints: ['桌子没动，说明它处于什么状态？', '平衡状态。', '平衡状态下，推力等于静摩擦力。']
+  },
+  {
+    id: 'ex_160', knowledge_node_id: 'balance_condition', chapter: '力与运动', section: '力',
+    difficulty: 2, type: 'choice',
+    content: '一个物体做匀速直线运动，则它受到的合力？',
+    options: ['一定为零', '一定不为零', '可能为零也可能不为零', '无法判断'],
+    answer: '一定为零',
+    explanation: '匀速直线运动是平衡状态，根据牛顿第一定律，平衡状态下物体所受合力为零。',
+    hints: ['匀速直线运动是平衡状态吗？', '是的。', '平衡状态合力为零。']
+  },
+  {
+    id: 'ex_161', knowledge_node_id: 'newton_first', chapter: '力与运动', section: '牛顿第一定律',
+    difficulty: 2, type: 'choice',
+    content: '正在运动的物体，如果所受外力突然全部消失，则物体将？',
+    options: ['立即停止', '速度变慢最后停止', '做匀速直线运动', '改变运动方向'],
+    answer: '做匀速直线运动',
+    explanation: '根据牛顿第一定律，不受力的物体将保持原来的运动状态。原来运动的物体将做匀速直线运动。',
+    hints: ['牛顿第一定律怎么说的？', '不受力保持原来运动状态。', '原来运动，就保持匀速直线运动。']
+  },
+  {
+    id: 'ex_162', knowledge_node_id: 'newton_first', chapter: '力与运动', section: '牛顿第一定律',
+    difficulty: 2, type: 'choice',
+    content: '关于牛顿第一定律，下列说法正确的是？',
+    options: ['可以直接用实验验证', '是凭空想象出来的', '是在实验基础上推理得出的', '只适用于静止的物体'],
+    answer: '是在实验基础上推理得出的',
+    explanation: '牛顿第一定律无法直接用实验验证（无法完全消除外力），但它是在大量实验事实的基础上，通过科学推理得出的。',
+    hints: ['现实中能做出完全没有力的环境吗？', '不能。', '所以定律是在实验基础上推理得出的。']
+  },
+  {
+    id: 'ex_163', knowledge_node_id: 'newton_first', chapter: '力与运动', section: '牛顿第一定律',
+    difficulty: 2, type: 'choice',
+    content: '牛顿第一定律揭示了？',
+    options: ['力是维持物体运动的原因', '力是改变物体运动状态的原因', '没有力的物体不能运动', '物体受力才会静止'],
+    answer: '力是改变物体运动状态的原因',
+    explanation: '牛顿第一定律说明，不受力时物体可以保持运动，所以力不是维持运动的原因，而是改变运动状态的原因。',
+    hints: ['不受力，运动的物体会怎样？', '继续运动。', '所以力不是维持运动的原因，而是改变运动状态的原因。']
+  },
+  {
+    id: 'ex_164', knowledge_node_id: 'inertia_concept', chapter: '力与运动', section: '惯性',
+    difficulty: 1, type: 'choice',
+    content: '惯性的大小只与物体的什么有关？',
+    options: ['速度', '质量', '形状', '受力大小'],
+    answer: '质量',
+    explanation: '惯性是物体保持原来运动状态的性质，惯性大小只与物体的质量有关，质量越大，惯性越大。',
+    hints: ['大货车和小轿车谁更难停下来？', '大货车。', '因为大货车质量大，惯性大。']
+  },
+  {
+    id: 'ex_165', knowledge_node_id: 'inertia_concept', chapter: '力与运动', section: '惯性',
+    difficulty: 2, type: 'choice',
+    content: '关于惯性，下列说法正确的是？',
+    options: ['运动的物体有惯性，静止的物体没有', '速度大的物体惯性大', '质量大的物体惯性大', '受力大的物体惯性大'],
+    answer: '质量大的物体惯性大',
+    explanation: '一切物体都有惯性，惯性大小只与质量有关，与运动状态、速度、是否受力都无关。',
+    hints: ['静止的物体有没有惯性？', '有。', '惯性只与质量有关。']
+  },
+  {
+    id: 'ex_166', knowledge_node_id: 'inertia_concept', chapter: '力与运动', section: '惯性',
+    difficulty: 2, type: 'choice',
+    content: '一辆高速行驶的汽车，紧急刹车后还要向前滑行一段距离，这是因为汽车具有？',
+    options: ['动力', '惯性', '摩擦力', '重力'],
+    answer: '惯性',
+    explanation: '汽车刹车后，由于惯性，汽车要保持原来的运动状态，继续向前运动一段距离。',
+    hints: ['刹车后为什么还会往前走？', '因为要保持原来的运动状态。', '这是惯性的表现。']
+  },
+
+  // ---- 力学其他知识点补充 ----
+  {
+    id: 'ex_167', knowledge_node_id: 'force_concept', chapter: '力与运动', section: '力',
+    difficulty: 1, type: 'choice',
+    content: '下列关于力的说法，错误的是？',
+    options: ['力不能脱离物体而存在', '力是物体对物体的作用', '不接触的物体间一定没有力的作用', '施力物体同时也是受力物体'],
+    answer: '不接触的物体间一定没有力的作用',
+    explanation: '不接触的物体间也可以有力的作用，如重力、磁力等。C选项说法错误。',
+    hints: ['磁铁能吸起远处的铁钉吗？', '能，不需要接触。', '不接触的物体间也可以有力的作用。']
+  },
+  {
+    id: 'ex_168', knowledge_node_id: 'force_interaction', chapter: '力与运动', section: '力',
+    difficulty: 2, type: 'choice',
+    content: '人走路时，脚向后蹬地，人却向前运动，这说明？',
+    options: ['人对地面的力大于地面给人的力', '地面给人的力大于人对地面的力', '力的作用是相互的', '以上都不对'],
+    answer: '力的作用是相互的',
+    explanation: '脚向后蹬地，地面同时给脚一个向前的反作用力，使人前进。作用力与反作用力大小相等。',
+    hints: ['向后蹬地为什么能向前走？', '因为地面也给了脚一个向前的力。', '力的作用是相互的。']
+  },
+  {
+    id: 'ex_169', knowledge_node_id: 'elastic_concept', chapter: '力与运动', section: '弹力',
+    difficulty: 2, type: 'choice',
+    content: '下列物体中，发生了弹性形变的是？',
+    options: ['捏扁的橡皮泥', '拉长的橡皮筋', '压扁的面包', '弯折的铁丝'],
+    answer: '拉长的橡皮筋',
+    explanation: '弹性形变指撤去外力后能恢复原状的形变。橡皮筋能恢复原状，属于弹性形变。其他三种撤去外力后不能恢复原状。',
+    hints: ['哪种物体松手后能恢复原状？', '橡皮筋。', '能恢复原状的形变是弹性形变。']
+  },
+  {
+    id: 'ex_170', knowledge_node_id: 'elastic_measurement', chapter: '力与运动', section: '弹簧测力计',
+    difficulty: 2, type: 'choice',
+    content: '使用弹簧测力计时，弹簧的轴线方向应与所测力的方向？',
+    options: ['垂直', '一致', '成45度角', '无关'],
+    answer: '一致',
+    explanation: '弹簧测力计使用时，弹簧轴线方向应与所测力的方向一致，否则会影响测量准确性，甚至损坏测力计。',
+    hints: ['如果斜着拉弹簧测力计，读数会准吗？', '不会准。', '轴线方向应与力的方向一致。']
+  },
+  {
+    id: 'ex_171', knowledge_node_id: 'gravity_concept', chapter: '力与运动', section: '重力',
+    difficulty: 1, type: 'choice',
+    content: '踢到空中的足球，不计空气阻力，只受到什么力的作用？',
+    options: ['踢力', '重力和踢力', '重力', '没有受力'],
+    answer: '重力',
+    explanation: '足球离开脚后，踢力消失，不计空气阻力时，只受到重力作用。',
+    hints: ['足球在空中，脚还碰着它吗？', '不碰了。', '离开脚后只受重力。']
+  },
+  {
+    id: 'ex_172', knowledge_node_id: 'gravity_center', chapter: '力与运动', section: '重心',
+    difficulty: 2, type: 'choice',
+    content: '不倒翁不容易倒，是因为它的？',
+    options: ['质量大', '重心低', '底部面积大', '形状好看'],
+    answer: '重心低',
+    explanation: '不倒翁底部重，重心很低，偏离平衡位置时重力产生的力矩会把它拉回来，所以不容易倒。',
+    hints: ['不倒翁的重心在哪里？', '在底部。', '重心低，稳定性好。']
+  },
+  {
+    id: 'ex_173', knowledge_node_id: 'inertia_application', chapter: '力与运动', section: '惯性',
+    difficulty: 2, type: 'choice',
+    content: '跳远运动员助跑后起跳，是利用了？',
+    options: ['增大惯性', '减小惯性', '利用惯性', '消除惯性'],
+    answer: '利用惯性',
+    explanation: '助跑使运动员获得较大速度，起跳后由于惯性，身体保持向前运动，从而跳得更远。惯性大小不变。',
+    hints: ['起跳后身体为什么还能继续向前？', '因为惯性。', '助跑是利用惯性跳得更远。']
+  },
+  {
+    id: 'ex_174', knowledge_node_id: 'balance_friction', chapter: '力与运动', section: '力',
+    difficulty: 2, type: 'choice',
+    content: '用弹簧测力计拉着木块在水平桌面上做匀速直线运动，弹簧测力计示数为2N，则木块受到的滑动摩擦力为？',
+    options: ['0N', '1N', '2N', '4N'],
+    answer: '2N',
+    explanation: '木块做匀速直线运动，处于平衡状态，拉力与滑动摩擦力是一对平衡力，大小相等，所以摩擦力等于2N。',
+    hints: ['匀速直线运动说明什么？', '受力平衡。', '拉力等于摩擦力，都是2N。']
+  },
+  {
+    id: 'ex_175', knowledge_node_id: 'friction_concept', chapter: '力与运动', section: '摩擦力',
+    difficulty: 1, type: 'choice',
+    content: '下列事例中，为了增大摩擦的是？',
+    options: ['给机器加润滑油', '轮胎上有花纹', '使用滚珠轴承', '冰壶运动员擦冰'],
+    answer: '轮胎上有花纹',
+    explanation: '轮胎花纹增大了接触面的粗糙程度，从而增大摩擦。其他三项都是减小摩擦。',
+    hints: ['花纹使路面变光滑还是变粗糙？', '变粗糙。', '增大粗糙程度可以增大摩擦。']
+  },
+  {
+    id: 'ex_176', knowledge_node_id: 'friction_factors', chapter: '力与运动', section: '摩擦力',
+    difficulty: 2, type: 'choice',
+    content: '同一木块分别平放和侧放在同一水平桌面上，用弹簧测力计匀速拉动，两次示数？',
+    options: ['平放大', '侧放大', '一样大', '无法判断'],
+    answer: '一样大',
+    explanation: '滑动摩擦力大小只与压力和接触面粗糙程度有关。平放和侧放压力相同（都等于重力），接触面粗糙程度相同，所以摩擦力相同。',
+    hints: ['滑动摩擦力与接触面积有关吗？', '无关。', '压力和粗糙程度相同，摩擦力就相同。']
+  },
+  {
+    id: 'ex_177', knowledge_node_id: 'friction_application', chapter: '力与运动', section: '摩擦力',
+    difficulty: 2, type: 'choice',
+    content: '下列实例中，通过变滑动为滚动来减小摩擦的是？',
+    options: ['鞋底有花纹', '行李箱装有轮子', '刹车时用力捏闸', '轮胎上有深深的花纹'],
+    answer: '行李箱装有轮子',
+    explanation: '行李箱装轮子是将滑动摩擦变为滚动摩擦，大大减小了摩擦。其他选项都是增大摩擦。',
+    hints: ['轮子转动时与地面是什么摩擦？', '滚动摩擦。', '滚动摩擦比滑动摩擦小得多。']
+  },
+  {
+    id: 'ex_178', knowledge_node_id: 'motion_speed', chapter: '机械运动', section: '速度',
+    difficulty: 2, type: 'choice',
+    content: '小明骑自行车上学，前半程速度为5m/s，后半程速度为10m/s，则全程平均速度？',
+    options: ['等于7.5m/s', '小于7.5m/s', '大于7.5m/s', '无法确定'],
+    answer: '小于7.5m/s',
+    explanation: '设全程为2s，则总时间 t = s/5 + s/10 = 3s/10。平均速度 v = 2s/(3s/10) = 20/3 ≈ 6.67m/s < 7.5m/s。',
+    hints: ['前半程用的时间多还是后半程？', '前半程速度慢，用的时间多。', '平均速度更接近较慢的速度，所以小于7.5m/s。']
+  },
+  {
+    id: 'ex_179', knowledge_node_id: 'phase_melt', chapter: '物态变化', section: '熔化和凝固',
+    difficulty: 2, type: 'choice',
+    content: '把正在熔化的冰拿到0℃的房间里，冰会？',
+    options: ['继续熔化', '停止熔化', '凝固', '先熔化后凝固'],
+    answer: '停止熔化',
+    explanation: '熔化需要吸热。冰和房间都是0℃，没有温度差，冰不能从周围环境吸热，所以停止熔化。',
+    hints: ['熔化需要什么条件？', '需要吸热。', '没有温度差就不能吸热，熔化停止。']
+  },
+  {
+    id: 'ex_180', knowledge_node_id: 'sound_characteristics', chapter: '声现象', section: '声音的特性',
+    difficulty: 2, type: 'choice',
+    content: '用大小不同的力敲击同一个音叉，发出声音的什么不同？',
+    options: ['音调', '响度', '音色', '频率'],
+    answer: '响度',
+    explanation: '大小不同的力使音叉振幅不同，振幅决定响度。同一音叉频率不变，音调和音色也不变。',
+    hints: ['力的大小影响音叉振动的什么？', '影响振幅。', '振幅决定响度。']
+  },
 ];
