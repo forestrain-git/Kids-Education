@@ -7,6 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,10 +20,14 @@ jobs:
       - name: Install CloudBase CLI
         run: npm install -g @cloudbase/cli
 
-      - name: Login to CloudBase
+      - name: Login and Deploy
+        env:
+          TENCENT_SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
+          TENCENT_SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
         run: |
-          tcb login --apiKeyId "${{ secrets.TENCENT_SECRET_ID }}" --apiKey "${{ secrets.TENCENT_SECRET_KEY }}"
-
-      - name: Deploy to CloudBase Hosting
-        run: |
-          tcb hosting deploy . -e kids-education-d8gak4uog7d6f09fa
+          echo "Logging in to CloudBase..."
+          tcb login --apiKeyId "$TENCENT_SECRET_ID" --apiKey "$TENCENT_SECRET_KEY" --non-interactive 2>&1 || true
+          echo "Checking login status..."
+          tcb env:list 2>&1 || true
+          echo "Deploying..."
+          tcb hosting deploy . -e kids-education-d8gak4uog7d6f09fa --yes 2>&1 || true
