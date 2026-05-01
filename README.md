@@ -4,7 +4,8 @@
 
 ## 在线访问
 
-- **学生端**：https://forestrain-git.github.io/Kids-Education/
+- **学生端（GitHub Pages）**：https://forestrain-git.github.io/Kids-Education/
+- **学生端（Vercel）**：https://kids-education-eight.vercel.app/
 - **家长看板**：https://forestrain-git.github.io/Kids-Education/parent.html
 
 ## 核心功能
