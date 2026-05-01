@@ -3,7 +3,55 @@
 // ============================================
 
 // 合并题库
-var ALL_QUESTIONS = [...UPPER_QUESTIONS, ...MECH_QUESTIONS];
+var ALL_QUESTIONS = [...UPPER_QUESTIONS, ...MECH_QUESTIONS, ...EXTRA_QUESTIONS];
+
+// 题目标签映射（按知识点自动标注）
+var TAG_MAP = {
+  'motion_measurement': ['概念型', '计算型'],
+  'motion_reference': ['概念型', '辨析型'],
+  'motion_speed': ['计算型', '概念型'],
+  'motion_avg_speed': ['实验型', '计算型'],
+  'sound_production': ['概念型', '实验型'],
+  'sound_characteristics': ['辨析型', '概念型'],
+  'sound_utilization': ['应用型', '概念型'],
+  'sound_noise': ['应用型', '概念型'],
+  'temp_measurement': ['概念型'],
+  'phase_melt': ['辨析型', '概念型'],
+  'phase_vapor': ['辨析型', '应用型'],
+  'phase_sublime': ['辨析型', '概念型'],
+  'force_concept': ['概念型', '辨析型'],
+  'force_effect': ['概念型', '应用型'],
+  'force_interaction': ['概念型', '辨析型'],
+  'elastic_concept': ['概念型'],
+  'elastic_measurement': ['实验型', '概念型'],
+  'elastic_hooke': ['计算型', '概念型'],
+  'gravity_concept': ['概念型'],
+  'gravity_calculation': ['计算型', '概念型'],
+  'gravity_center': ['概念型'],
+  'newton_first': ['概念型', '辨析型'],
+  'inertia_concept': ['概念型'],
+  'inertia_application': ['应用型', '概念型'],
+  'balance_condition': ['概念型', '计算型', '辨析型'],
+  'balance_friction': ['概念型', '辨析型'],
+  'friction_concept': ['概念型'],
+  'friction_factors': ['实验型', '概念型'],
+  'friction_application': ['应用型', '概念型'],
+};
+ALL_QUESTIONS.forEach(q => {
+  q.tags = TAG_MAP[q.knowledge_node_id] || ['概念型'];
+});
+
+// 做题过程标签列表
+var ANSWER_TAG_OPTIONS = ['完全不会', '概念不清', '公式记错', '粗心大意', '似懂非懂'];
+
+// 标签 → 优先推荐题型映射
+var TAG_TO_QUESTION_TYPE = {
+  '概念不清': '概念型',
+  '公式记错': '计算型',
+  '粗心大意': '辨析型',
+  '似懂非懂': '应用型',
+  '完全不会': '概念型',
+};
 
 // 存储模块
 var Storage = {
@@ -27,7 +75,9 @@ var Storage = {
       firstUse: new Date().toISOString().split('T')[0],
       totalAnswered: 0,
       totalCorrect: 0,
-      dailyGoal: 10,
+      dailyGoal: 30,
+      answerTags: {},    // { questionId: '概念不清' }
+      tagStats: {},      // { nodeId: { '概念不清': 3, '粗心大意': 1 } }
       lastStudyDate: null,
       streak: 0,
     };
@@ -172,7 +222,7 @@ var Engine = {
       }
     }
 
-    // 3. ZPD 题目
+    // 3. ZPD 题目（基于标签调整题型）
     if (recommended.length < count) {
       let zpdNodes = Object.entries(state.mastery)
         .filter(([_, m]) => m.score >= 20 && m.score <= 80)
@@ -183,8 +233,43 @@ var Engine = {
         zpdNodes = KNOWLEDGE_NODES.map(n => n.id).filter(id => !learnedNodes.has(id));
       }
 
-      const candidates = ALL_QUESTIONS.filter(q => zpdNodes.includes(q.knowledge_node_id) && !usedIds.has(q.id));
-      candidates.sort(() => Math.random() - 0.5);
+      // 获取每个知识点的优先题型（根据做题标签统计）
+      const nodePriority = {};
+      zpdNodes.forEach(nodeId => {
+        const stats = state.tagStats[nodeId] || {};
+        const entries = Object.entries(stats).filter(([tag]) => TAG_TO_QUESTION_TYPE[tag]);
+        if (entries.length > 0) {
+          entries.sort((a, b) => b[1] - a[1]);
+          nodePriority[nodeId] = TAG_TO_QUESTION_TYPE[entries[0][0]];
+        }
+      });
+
+      // 获取需要降难度的知识点（完全不会标签最多）
+      const easyNodes = new Set();
+      zpdNodes.forEach(nodeId => {
+        const stats = state.tagStats[nodeId] || {};
+        const entries = Object.entries(stats);
+        if (entries.length > 0) {
+          entries.sort((a, b) => b[1] - a[1]);
+          if (entries[0][0] === '完全不会') easyNodes.add(nodeId);
+        }
+      });
+
+      let candidates = ALL_QUESTIONS.filter(q => zpdNodes.includes(q.knowledge_node_id) && !usedIds.has(q.id));
+
+      // 按标签匹配度和难度排序：匹配优先题型 > 非降难度知识点 > 随机
+      candidates.sort((a, b) => {
+        const pa = nodePriority[a.knowledge_node_id];
+        const pb = nodePriority[b.knowledge_node_id];
+        const ha = pa && a.tags.includes(pa) ? 2 : 0;
+        const hb = pb && b.tags.includes(pb) ? 2 : 0;
+
+        const ea = easyNodes.has(a.knowledge_node_id) ? a.difficulty : 0;
+        const eb = easyNodes.has(b.knowledge_node_id) ? b.difficulty : 0;
+
+        return (hb + (3 - eb)) - (ha + (3 - ea));
+      });
+
       for (const q of candidates.slice(0, count - recommended.length)) {
         recommended.push({ ...q, reason: '挑战' });
         usedIds.add(q.id);
@@ -204,12 +289,20 @@ var Engine = {
     return recommended.slice(0, count);
   },
 
-  recordAnswer(questionId, correct, timeSpent) {
+  recordAnswer(questionId, correct, timeSpent, answerTag) {
     const state = Storage.getState();
     const q = ALL_QUESTIONS.find(q => q.id === questionId);
     const timestamp = new Date().toISOString();
 
-    state.history.push({ questionId, correct, timestamp, timeSpent });
+    state.history.push({ questionId, correct, timestamp, timeSpent, answerTag });
+
+    // 更新标签统计
+    if (answerTag && q) {
+      const nodeId = q.knowledge_node_id;
+      if (!state.tagStats[nodeId]) state.tagStats[nodeId] = {};
+      state.tagStats[nodeId][answerTag] = (state.tagStats[nodeId][answerTag] || 0) + 1;
+      state.answerTags[questionId] = answerTag;
+    }
 
     if (correct) {
       state.wrongQuestions = state.wrongQuestions.filter(id => id !== questionId);
@@ -513,7 +606,8 @@ var UI = {
     const correct = selectedText === q.answer;
     const timeSpent = Math.round((Date.now() - this.quizStartTime) / 1000);
 
-    Engine.recordAnswer(q.id, correct, timeSpent);
+    // 保存答题状态，等用户看完解析/选好标签后再记录
+    this.currentAnswer = { questionId: q.id, correct, selectedText, timeSpent };
 
     // 更新选项样式
     document.querySelectorAll('.option-btn').forEach((btn, i) => {
@@ -569,14 +663,43 @@ var UI = {
           </div>
         </div>
 
-        <button class="btn-primary btn-large" onclick="UI.nextQuestion()">
+        ${!correct ? `
+          <div class="tag-box" id="tag-box">
+            <div class="tag-title">这道题为什么做错了？（选一个）</div>
+            <div class="tag-options">
+              <button class="tag-btn" data-tag="完全不会" onclick="UI.selectTag(this)">完全不会</button>
+              <button class="tag-btn" data-tag="概念不清" onclick="UI.selectTag(this)">概念不清</button>
+              <button class="tag-btn" data-tag="公式记错" onclick="UI.selectTag(this)">公式记错</button>
+              <button class="tag-btn" data-tag="粗心大意" onclick="UI.selectTag(this)">粗心大意</button>
+              <button class="tag-btn" data-tag="似懂非懂" onclick="UI.selectTag(this)">似懂非懂</button>
+            </div>
+          </div>
+        ` : ''}
+
+        <button class="btn-primary btn-large" id="next-btn" onclick="UI.nextQuestion()">
           ${isLast ? '完成练习' : '下一题'}
         </button>
       </div>
     `;
   },
 
+  selectedTag: null,
+
+  selectTag(btn) {
+    this.selectedTag = btn.dataset.tag;
+    document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  },
+
   nextQuestion() {
+    // 记录答案（包含标签）
+    if (this.currentAnswer) {
+      const tag = !this.currentAnswer.correct ? this.selectedTag : null;
+      Engine.recordAnswer(this.currentAnswer.questionId, this.currentAnswer.correct, this.currentAnswer.timeSpent, tag);
+    }
+    this.currentAnswer = null;
+    this.selectedTag = null;
+
     this.currentQuizIndex++;
     this.showQuizPage();
   },
