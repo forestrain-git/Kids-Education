@@ -1,0 +1,819 @@
+// ============================================
+// 物理提分助手 - 核心逻辑层
+// ============================================
+
+// 合并题库
+var ALL_QUESTIONS = [...UPPER_QUESTIONS, ...MECH_QUESTIONS];
+
+// 存储模块
+var Storage = {
+  KEY: 'physics_learning_state_v1',
+
+  getState() {
+    const raw = localStorage.getItem(this.KEY);
+    if (raw) {
+      try { return JSON.parse(raw); } catch(e) { console.error('Parse error', e); }
+    }
+    return this.getDefaultState();
+  },
+
+  getDefaultState() {
+    return {
+      mastery: {},
+      history: [],
+      wrongQuestions: [],
+      reviewSchedule: {},
+      dailyStats: {},
+      firstUse: new Date().toISOString().split('T')[0],
+      totalAnswered: 0,
+      totalCorrect: 0,
+      dailyGoal: 10,
+      lastStudyDate: null,
+      streak: 0,
+    };
+  },
+
+  saveState(state) {
+    localStorage.setItem(this.KEY, JSON.stringify(state));
+  },
+
+  exportData() {
+    return JSON.stringify(this.getState(), null, 2);
+  },
+
+  importData(json) {
+    const data = JSON.parse(json);
+    this.saveState(data);
+  },
+
+  reset() {
+    localStorage.removeItem(this.KEY);
+  }
+};
+
+// 引擎模块
+var Engine = {
+  getMastery(nodeId) {
+    const state = Storage.getState();
+    return state.mastery[nodeId] || { score: 0, answered: 0, correct: 0, lastReview: null, streak: 0 };
+  },
+
+  updateMastery(nodeId, correct) {
+    const state = Storage.getState();
+    let m = state.mastery[nodeId] || { score: 0, answered: 0, correct: 0, lastReview: null, streak: 0 };
+
+    m.answered++;
+    if (correct) {
+      m.correct++;
+      m.streak++;
+      const increment = Math.max(5, (100 - m.score) * 0.15);
+      m.score = Math.min(100, m.score + increment);
+    } else {
+      m.streak = 0;
+      const decrement = Math.max(5, m.score * 0.12);
+      m.score = Math.max(0, m.score - decrement);
+    }
+
+    m.lastReview = new Date().toISOString();
+    state.mastery[nodeId] = m;
+
+    this.updateReviewSchedule(nodeId, correct);
+    this.updateStreak(state);
+    Storage.saveState(state);
+    return m;
+  },
+
+  updateStreak(state) {
+    const today = new Date().toISOString().split('T')[0];
+    if (state.lastStudyDate === today) return;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = yesterday.toISOString().split('T')[0];
+
+    if (state.lastStudyDate === yStr) {
+      state.streak++;
+    } else {
+      state.streak = 1;
+    }
+    state.lastStudyDate = today;
+  },
+
+  updateReviewSchedule(nodeId, correct) {
+    const state = Storage.getState();
+    const intervals = [1, 3, 7, 14, 30];
+    let schedule = state.reviewSchedule[nodeId];
+
+    if (!schedule || typeof schedule !== 'object') {
+      schedule = { level: -1, nextReview: null, history: [] };
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    if (correct) {
+      schedule.level = Math.min(schedule.level + 1, intervals.length - 1);
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + intervals[schedule.level]);
+      schedule.nextReview = nextDate.toISOString().split('T')[0];
+    } else {
+      schedule.level = -1;
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + 1);
+      schedule.nextReview = nextDate.toISOString().split('T')[0];
+    }
+
+    if (!schedule.history) schedule.history = [];
+    schedule.history.push({ date: today, result: correct ? 'correct' : 'wrong' });
+    if (schedule.history.length > 20) schedule.history = schedule.history.slice(-20);
+
+    state.reviewSchedule[nodeId] = schedule;
+  },
+
+  getDueReviews() {
+    const state = Storage.getState();
+    const today = new Date().toISOString().split('T')[0];
+    const dueNodes = [];
+
+    for (const [nodeId, schedule] of Object.entries(state.reviewSchedule)) {
+      if (schedule && schedule.nextReview && schedule.nextReview <= today) {
+        dueNodes.push(nodeId);
+      }
+    }
+    return dueNodes;
+  },
+
+  getRecommendedQuestions(count) {
+    count = count || Storage.getState().dailyGoal;
+    const state = Storage.getState();
+    const recommended = [];
+    const usedIds = new Set();
+
+    // 1. 艾宾浩斯复习
+    const dueNodes = this.getDueReviews();
+    for (const nodeId of dueNodes) {
+      const questions = ALL_QUESTIONS.filter(q => q.knowledge_node_id === nodeId && !usedIds.has(q.id));
+      if (questions.length > 0) {
+        const q = questions[Math.floor(Math.random() * questions.length)];
+        recommended.push({ ...q, reason: '复习' });
+        usedIds.add(q.id);
+      }
+      if (recommended.length >= count) break;
+    }
+
+    // 2. 错题复练
+    if (recommended.length < count) {
+      const wrongQs = state.wrongQuestions
+        .map(id => ALL_QUESTIONS.find(q => q.id === id))
+        .filter(q => q && !usedIds.has(q.id));
+      wrongQs.sort(() => Math.random() - 0.5);
+      for (const q of wrongQs.slice(0, count - recommended.length)) {
+        recommended.push({ ...q, reason: '错题' });
+        usedIds.add(q.id);
+      }
+    }
+
+    // 3. ZPD 题目
+    if (recommended.length < count) {
+      let zpdNodes = Object.entries(state.mastery)
+        .filter(([_, m]) => m.score >= 20 && m.score <= 80)
+        .map(([id]) => id);
+
+      if (zpdNodes.length === 0) {
+        const learnedNodes = new Set(Object.keys(state.mastery));
+        zpdNodes = KNOWLEDGE_NODES.map(n => n.id).filter(id => !learnedNodes.has(id));
+      }
+
+      const candidates = ALL_QUESTIONS.filter(q => zpdNodes.includes(q.knowledge_node_id) && !usedIds.has(q.id));
+      candidates.sort(() => Math.random() - 0.5);
+      for (const q of candidates.slice(0, count - recommended.length)) {
+        recommended.push({ ...q, reason: '挑战' });
+        usedIds.add(q.id);
+      }
+    }
+
+    // 4. 补充新题
+    if (recommended.length < count) {
+      const remaining = ALL_QUESTIONS.filter(q => !usedIds.has(q.id));
+      remaining.sort(() => Math.random() - 0.5);
+      for (const q of remaining.slice(0, count - recommended.length)) {
+        recommended.push({ ...q, reason: '新题' });
+        usedIds.add(q.id);
+      }
+    }
+
+    return recommended.slice(0, count);
+  },
+
+  recordAnswer(questionId, correct, timeSpent) {
+    const state = Storage.getState();
+    const q = ALL_QUESTIONS.find(q => q.id === questionId);
+    const timestamp = new Date().toISOString();
+
+    state.history.push({ questionId, correct, timestamp, timeSpent });
+
+    if (correct) {
+      state.wrongQuestions = state.wrongQuestions.filter(id => id !== questionId);
+    } else {
+      if (!state.wrongQuestions.includes(questionId)) {
+        state.wrongQuestions.push(questionId);
+      }
+    }
+
+    state.totalAnswered++;
+    if (correct) state.totalCorrect++;
+
+    const today = timestamp.split('T')[0];
+    if (!state.dailyStats[today]) {
+      state.dailyStats[today] = { questions: 0, correct: 0, time: 0 };
+    }
+    state.dailyStats[today].questions++;
+    if (correct) state.dailyStats[today].correct++;
+    state.dailyStats[today].time += timeSpent;
+
+    if (q) {
+      this.updateMastery(q.knowledge_node_id, correct);
+    } else {
+      Storage.saveState(state);
+    }
+  },
+
+  getStats() {
+    const state = Storage.getState();
+    const today = new Date().toISOString().split('T')[0];
+    const todayStat = state.dailyStats[today] || { questions: 0, correct: 0, time: 0 };
+
+    const masteryValues = Object.values(state.mastery);
+    const avgMastery = masteryValues.length > 0
+      ? masteryValues.reduce((a, b) => a + b.score, 0) / masteryValues.length
+      : 0;
+
+    const weakNodes = Object.entries(state.mastery)
+      .map(([id, m]) => ({ ...m, id }))
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 5)
+      .map(m => {
+        const node = KNOWLEDGE_NODES.find(n => n.id === m.id);
+        return { name: node ? node.name : m.id, score: Math.round(m.score) };
+      });
+
+    return {
+      totalAnswered: state.totalAnswered,
+      totalCorrect: state.totalCorrect,
+      accuracy: state.totalAnswered > 0 ? Math.round(state.totalCorrect / state.totalAnswered * 100) : 0,
+      todayQuestions: todayStat.questions,
+      todayCorrect: todayStat.correct,
+      todayAccuracy: todayStat.questions > 0 ? Math.round(todayStat.correct / todayStat.questions * 100) : 0,
+      avgMastery: Math.round(avgMastery),
+      weakNodes,
+      streak: state.streak,
+      wrongCount: state.wrongQuestions.length,
+      dailyGoal: state.dailyGoal,
+    };
+  },
+
+  getNodeQuestions(nodeId) {
+    return ALL_QUESTIONS.filter(q => q.knowledge_node_id === nodeId);
+  },
+
+  getWrongQuestions() {
+    const state = Storage.getState();
+    return state.wrongQuestions
+      .map(id => ALL_QUESTIONS.find(q => q.id === id))
+      .filter(q => q);
+  },
+
+  getParentStats() {
+    const state = Storage.getState();
+    const today = new Date().toISOString().split('T')[0];
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekAgoStr = weekAgo.toISOString().split('T')[0];
+
+    // 最近7天数据
+    const weekStats = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dStr = d.toISOString().split('T')[0];
+      const stat = state.dailyStats[dStr] || { questions: 0, correct: 0 };
+      weekStats.push({ date: dStr, ...stat });
+    }
+
+    // 知识点掌握度详情
+    const nodeDetails = KNOWLEDGE_NODES.map(node => {
+      const m = state.mastery[node.id] || { score: 0, answered: 0 };
+      return {
+        name: node.name,
+        chapter: node.chapter,
+        score: Math.round(m.score),
+        answered: m.answered,
+      };
+    }).sort((a, b) => a.score - b.score);
+
+    return {
+      weekStats,
+      nodeDetails,
+      totalAnswered: state.totalAnswered,
+      totalCorrect: state.totalCorrect,
+      streak: state.streak,
+      wrongCount: state.wrongQuestions.length,
+      todayStat: state.dailyStats[today] || { questions: 0, correct: 0 },
+    };
+  }
+};
+
+// ============================================
+// UI 模块
+// ============================================
+var UI = {
+  currentPage: 'home',
+  quizQueue: [],
+  currentQuizIndex: 0,
+  quizStartTime: 0,
+  selectedOption: null,
+  submitted: false,
+
+  init() {
+    this.bindNavEvents();
+    this.showPage('home');
+  },
+
+  bindNavEvents() {
+    document.querySelectorAll('#nav button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.showPage(btn.dataset.page);
+      });
+    });
+  },
+
+  showPage(page) {
+    this.currentPage = page;
+    this.submitted = false;
+
+    document.querySelectorAll('#nav button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.page === page);
+    });
+
+    const titles = { home: '今日任务', map: '知识地图', review: '错题本', settings: '设置' };
+    document.getElementById('page-title').textContent = titles[page] || '';
+    document.getElementById('nav').style.display = 'flex';
+
+    const main = document.getElementById('main-content');
+    main.innerHTML = '';
+    main.className = '';
+
+    switch (page) {
+      case 'home': this.renderHome(main); break;
+      case 'map': this.renderMap(main); break;
+      case 'review': this.renderReview(main); break;
+      case 'settings': this.renderSettings(main); break;
+    }
+  },
+
+  // -------- 首页 --------
+  renderHome(container) {
+    const stats = Engine.getStats();
+    const remaining = Math.max(0, stats.dailyGoal - stats.todayQuestions);
+    const progress = Math.min(100, Math.round(stats.todayQuestions / stats.dailyGoal * 100));
+
+    container.innerHTML = `
+      <div class="home-page">
+        <div class="welcome-bar">
+          <div class="welcome-text">
+            ${stats.streak > 1 ? `🔥 连续学习 ${stats.streak} 天` : '欢迎回来，开始今天的学习吧'}
+          </div>
+        </div>
+
+        <div class="task-card ${remaining === 0 ? 'completed' : ''}">
+          <div class="task-header">
+            <div class="task-title">${remaining === 0 ? '今日目标已完成' : '今日练习'}</div>
+            <div class="task-sub">${stats.todayQuestions} / ${stats.dailyGoal} 题</div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar-home" style="width:${progress}%"></div>
+          </div>
+          <div class="task-desc">
+            ${remaining === 0
+              ? '太棒了！已完成今日目标，可以继续加油'
+              : remaining > 0
+                ? `还有 ${remaining} 道题即可完成今日目标`
+                : '开始今天的物理学习吧'}
+          </div>
+          <button class="btn-primary btn-large" onclick="UI.startQuiz()">
+            ${remaining === 0 ? '继续练习' : '开始练习'}
+          </button>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-value">${stats.avgMastery}%</div>
+            <div class="stat-label">平均掌握度</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.todayAccuracy}%</div>
+            <div class="stat-label">今日正确率</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.wrongCount}</div>
+            <div class="stat-label">待复习错题</div>
+          </div>
+        </div>
+
+        ${stats.weakNodes.length > 0 ? `
+          <div class="section-box">
+            <div class="section-title">需要加强的知识点</div>
+            <div class="weak-list">
+              ${stats.weakNodes.map(n => `
+                <div class="weak-item" onclick="UI.startNodeQuiz('${this.getNodeIdByName(n.name)}')">
+                  <span class="weak-name">${n.name}</span>
+                  <span class="weak-score">${n.score}%</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  },
+
+  getNodeIdByName(name) {
+    const node = KNOWLEDGE_NODES.find(n => n.name === name);
+    return node ? node.id : '';
+  },
+
+  // -------- 答题 --------
+  startQuiz() {
+    this.quizQueue = Engine.getRecommendedQuestions();
+    this.currentQuizIndex = 0;
+    this.showQuizPage();
+  },
+
+  showQuizPage() {
+    const main = document.getElementById('main-content');
+    const total = this.quizQueue.length;
+
+    if (this.currentQuizIndex >= total) {
+      this.showQuizResult();
+      return;
+    }
+
+    const q = this.quizQueue[this.currentQuizIndex];
+    this.selectedOption = null;
+    this.submitted = false;
+    this.quizStartTime = Date.now();
+
+    const reasonLabel = { '复习': '🔁', '错题': '❌', '挑战': '⚡', '新题': '📖' };
+    const reasonText = { '复习': '艾宾浩斯复习', '错题': '错题重练', '挑战': '能力提升', '新题': '新知识' };
+
+    document.getElementById('page-title').textContent = `第 ${this.currentQuizIndex + 1}/${total} 题`;
+    document.getElementById('nav').style.display = 'none';
+
+    main.innerHTML = `
+      <div class="quiz-page">
+        <div class="quiz-meta">
+          <span class="quiz-tag">${q.chapter}</span>
+          ${q.reason ? `<span class="quiz-reason-tag ${q.reason}">${reasonLabel[q.reason] || ''} ${reasonText[q.reason] || ''}</span>` : ''}
+          <span class="quiz-diff">难度 ${'★'.repeat(q.difficulty)}${'☆'.repeat(3 - q.difficulty)}</span>
+        </div>
+
+        <div class="question-box">
+          <div class="question-text">${q.content}</div>
+        </div>
+
+        <div class="options-list">
+          ${q.options.map((opt, i) => `
+            <button class="option-btn" data-index="${i}" onclick="UI.selectOption(${i})">
+              <span class="option-letter">${String.fromCharCode(65 + i)}</span>
+              <span class="option-text">${opt}</span>
+            </button>
+          `).join('')}
+        </div>
+
+        <button class="btn-primary btn-large" id="submit-btn" onclick="UI.submitAnswer()" disabled>提交答案</button>
+      </div>
+    `;
+  },
+
+  selectOption(index) {
+    if (this.submitted) return;
+    this.selectedOption = index;
+    document.querySelectorAll('.option-btn').forEach((btn, i) => {
+      btn.classList.toggle('selected', i === index);
+    });
+    const submitBtn = document.getElementById('submit-btn');
+    if (submitBtn) submitBtn.disabled = false;
+  },
+
+  submitAnswer() {
+    if (this.submitted || this.selectedOption === null) return;
+    this.submitted = true;
+
+    const q = this.quizQueue[this.currentQuizIndex];
+    const selectedText = q.options[this.selectedOption];
+    const correct = selectedText === q.answer;
+    const timeSpent = Math.round((Date.now() - this.quizStartTime) / 1000);
+
+    Engine.recordAnswer(q.id, correct, timeSpent);
+
+    // 更新选项样式
+    document.querySelectorAll('.option-btn').forEach((btn, i) => {
+      const opt = q.options[i];
+      btn.disabled = true;
+      if (opt === q.answer) {
+        btn.classList.add('correct');
+      } else if (i === this.selectedOption) {
+        btn.classList.add('wrong');
+      }
+    });
+
+    // 更换提交按钮为查看解析
+    const submitBtn = document.getElementById('submit-btn');
+    if (submitBtn) {
+      submitBtn.textContent = '查看解析';
+      submitBtn.disabled = false;
+      submitBtn.onclick = () => this.showExplanation(q, correct, selectedText);
+    }
+  },
+
+  showExplanation(q, correct, selectedText) {
+    const main = document.getElementById('main-content');
+    const isLast = this.currentQuizIndex >= this.quizQueue.length - 1;
+
+    main.innerHTML = `
+      <div class="quiz-page">
+        <div class="result-bar ${correct ? 'correct' : 'wrong'}">
+          <span class="result-icon">${correct ? '✓' : '✗'}</span>
+          <span class="result-text">${correct ? '回答正确' : '回答错误'}</span>
+        </div>
+
+        <div class="question-box faded">
+          <div class="question-text">${q.content}</div>
+        </div>
+
+        <div class="options-list">
+          ${q.options.map((opt, i) => `
+            <div class="option-btn static ${opt === q.answer ? 'correct' : (opt === selectedText && !correct) ? 'wrong' : 'neutral'}">
+              <span class="option-letter">${String.fromCharCode(65 + i)}</span>
+              <span class="option-text">${opt}</span>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="explanation-box">
+          <div class="exp-step">
+            <div class="exp-label">💡 先想想</div>
+            <div class="exp-text">${q.hints[0]}</div>
+          </div>
+          <div class="exp-step">
+            <div class="exp-label">🔑 关键提示</div>
+            <div class="exp-text">${q.hints[1]}</div>
+          </div>
+          <div class="exp-step">
+            <div class="exp-label">📖 完整解析</div>
+            <div class="exp-text">${q.explanation}</div>
+          </div>
+        </div>
+
+        <button class="btn-primary btn-large" onclick="UI.nextQuestion()">
+          ${isLast ? '完成练习' : '下一题'}
+        </button>
+      </div>
+    `;
+  },
+
+  nextQuestion() {
+    this.currentQuizIndex++;
+    this.showQuizPage();
+  },
+
+  showQuizResult() {
+    const main = document.getElementById('main-content');
+    const stats = Engine.getStats();
+    const accuracy = stats.todayAccuracy;
+
+    document.getElementById('page-title').textContent = '练习完成';
+    document.getElementById('nav').style.display = 'flex';
+
+    let emoji, title, msg;
+    if (accuracy >= 90) { emoji = '🏆'; title = '完美！'; msg = '今天的表现太出色了！'; }
+    else if (accuracy >= 75) { emoji = '🎉'; title = '很棒！'; msg = '掌握得不错，继续保持！'; }
+    else if (accuracy >= 60) { emoji = '👍'; title = '不错！'; msg = '有进步，错题记得复习哦'; }
+    else { emoji = '💪'; title = '加油！'; msg = '基础需要巩固，继续努力'; }
+
+    main.innerHTML = `
+      <div class="result-page">
+        <div class="result-emoji">${emoji}</div>
+        <div class="result-title">${title}</div>
+        <div class="result-msg">${msg}</div>
+
+        <div class="result-stats">
+          <div class="result-stat">
+            <div class="result-value">${stats.todayQuestions}</div>
+            <div class="result-label">今日做题</div>
+          </div>
+          <div class="result-stat">
+            <div class="result-value">${stats.todayCorrect}</div>
+            <div class="result-label">答对</div>
+          </div>
+          <div class="result-stat">
+            <div class="result-value">${accuracy}%</div>
+            <div class="result-label">正确率</div>
+          </div>
+        </div>
+
+        <button class="btn-primary btn-large" onclick="UI.showPage('home')">返回首页</button>
+      </div>
+    `;
+  },
+
+  // -------- 知识地图 --------
+  renderMap(container) {
+    const state = Storage.getState();
+
+    container.innerHTML = `
+      <div class="map-page">
+        ${CHAPTERS.map(ch => {
+          const nodesHtml = ch.nodes.map(nodeId => {
+            const node = KNOWLEDGE_NODES.find(n => n.id === nodeId);
+            const m = state.mastery[nodeId] || { score: 0, answered: 0 };
+            let level = 'locked';
+            if (m.score >= 80) level = 'mastered';
+            else if (m.score >= 50) level = 'learning';
+            else if (m.score > 0 || m.answered > 0) level = 'started';
+            const pct = Math.round(m.score);
+
+            return `
+              <div class="node-cell ${level}" onclick="UI.startNodeQuiz('${nodeId}')">
+                <div class="node-status"></div>
+                <div class="node-name">${node.name}</div>
+                <div class="node-bar"><div class="node-fill" style="width:${pct}%"></div></div>
+                <div class="node-pct">${pct}%</div>
+              </div>
+            `;
+          }).join('');
+
+          return `
+            <div class="chapter-block">
+              <div class="chapter-title">八${ch.semester} · ${ch.name}</div>
+              <div class="nodes-grid">${nodesHtml}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  },
+
+  startNodeQuiz(nodeId) {
+    const questions = Engine.getNodeQuestions(nodeId);
+    if (questions.length === 0) {
+      alert('该知识点暂无题目');
+      return;
+    }
+    this.quizQueue = questions.sort(() => Math.random() - 0.5).slice(0, Math.min(5, questions.length));
+    this.currentQuizIndex = 0;
+    this.showQuizPage();
+  },
+
+  // -------- 错题本 --------
+  renderReview(container) {
+    const wrongQs = Engine.getWrongQuestions();
+
+    if (wrongQs.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🎉</div>
+          <div class="empty-title">暂无错题</div>
+          <div class="empty-desc">太棒了，继续保持！</div>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="review-page">
+        <div class="review-header">
+          <span class="review-count">待复习错题：${wrongQs.length} 道</span>
+          <button class="btn-secondary" onclick="UI.startWrongQuiz()">全部重练</button>
+        </div>
+        <div class="review-list">
+          ${wrongQs.map(q => {
+            const node = KNOWLEDGE_NODES.find(n => n.id === q.knowledge_node_id);
+            return `
+              <div class="review-card" onclick="UI.startNodeQuiz('${q.knowledge_node_id}')">
+                <div class="review-q">${q.content}</div>
+                <div class="review-meta">
+                  <span>${q.chapter}</span>
+                  <span>${node ? node.name : ''}</span>
+                  <span class="diff-tag">难度${q.difficulty}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  },
+
+  startWrongQuiz() {
+    const wrongQs = Engine.getWrongQuestions();
+    if (wrongQs.length === 0) return;
+    this.quizQueue = wrongQs.sort(() => Math.random() - 0.5);
+    this.currentQuizIndex = 0;
+    this.showQuizPage();
+  },
+
+  // -------- 设置 --------
+  renderSettings(container) {
+    const state = Storage.getState();
+
+    container.innerHTML = `
+      <div class="settings-page">
+        <div class="setting-group">
+          <div class="setting-label">每日目标</div>
+          <div class="setting-desc">每天推荐的练习题目数量</div>
+          <div class="goal-btns">
+            ${[5, 10, 15, 20].map(n => `
+              <button class="goal-btn ${state.dailyGoal === n ? 'active' : ''}" onclick="UI.setDailyGoal(${n})">${n} 题</button>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-label">数据备份</div>
+          <div class="setting-desc">防止学习记录丢失</div>
+          <button class="btn-secondary btn-block" onclick="UI.exportData()">导出数据到文件</button>
+          <button class="btn-secondary btn-block" onclick="UI.importData()">从文件导入数据</button>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-label">危险操作</div>
+          <button class="btn-danger btn-block" onclick="UI.resetData()">清除所有学习数据</button>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-label">关于</div>
+          <div class="about-text">
+            物理提分助手 v1.0<br>
+            八年级物理自适应学习<br>
+            共 ${ALL_QUESTIONS.length} 道题 · ${KNOWLEDGE_NODES.length} 个知识点
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  setDailyGoal(n) {
+    const state = Storage.getState();
+    state.dailyGoal = n;
+    Storage.saveState(state);
+    this.renderSettings(document.getElementById('main-content'));
+  },
+
+  exportData() {
+    const data = Storage.exportData();
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `physics_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+
+  importData() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          Storage.importData(event.target.result);
+          alert('数据导入成功！');
+          this.showPage('home');
+        } catch (err) {
+          alert('导入失败：' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  },
+
+  resetData() {
+    if (confirm('确定要清除所有学习数据吗？此操作不可恢复！')) {
+      Storage.reset();
+      alert('数据已清除');
+      this.showPage('home');
+    }
+  }
+};
+
+// 启动
+document.addEventListener('DOMContentLoaded', () => {
+  UI.init();
+});

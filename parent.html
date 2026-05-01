@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>学习报告 - 家长看板</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #F0F4F8; color: #1E293B;
+  font-size: 15px; line-height: 1.5;
+}
+.container { max-width: 800px; margin: 0 auto; padding: 20px 16px 40px; }
+
+/* 顶部 */
+.page-header {
+  text-align: center; margin-bottom: 24px;
+}
+.page-title { font-size: 22px; font-weight: 800; }
+.page-sub { font-size: 13px; color: #64748B; margin-top: 4px; }
+
+/* 卡片 */
+.card {
+  background: #fff; border-radius: 16px;
+  padding: 20px; margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.card-title {
+  font-size: 15px; font-weight: 700; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* 今日概况 */
+.today-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.today-item { text-align: center; }
+.today-value {
+  font-size: 32px; font-weight: 800;
+  color: #2563EB; margin-bottom: 4px;
+}
+.today-label { font-size: 13px; color: #64748B; }
+
+/* 柱状图 */
+.bar-chart {
+  display: flex; align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px; height: 160px; padding-top: 20px;
+}
+.bar-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+}
+.bar-col {
+  width: 100%; max-width: 40px;
+  background: #DBEAFE; border-radius: 6px 6px 0 0;
+  transition: height 0.5s ease;
+  position: relative; min-height: 4px;
+}
+.bar-col .bar-value {
+  position: absolute; top: -18px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px; font-weight: 700; color: #2563EB;
+  white-space: nowrap;
+}
+.bar-label {
+  font-size: 11px; color: #64748B;
+}
+
+/* 知识点列表 */
+.node-list { display: flex; flex-direction: column; gap: 8px; }
+.node-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; background: #F8FAFC;
+  border-radius: 10px;
+}
+.node-info { flex: 1; min-width: 0; }
+.node-name { font-size: 14px; font-weight: 500; }
+.node-chapter { font-size: 11px; color: #64748B; }
+.node-bar-wrap {
+  width: 80px; height: 6px; background: #E2E8F0;
+  border-radius: 3px; overflow: hidden;
+}
+.node-bar-fill { height: 100%; border-radius: 3px; }
+.node-score {
+  width: 36px; text-align: right;
+  font-size: 14px; font-weight: 700;
+}
+.score-high { color: #059669; }
+.score-mid { color: #D97706; }
+.score-low { color: #DC2626; }
+
+/* 薄弱知识点 */
+.weak-alert {
+  background: #FEF2F2; border: 1px solid #FECACA;
+  border-radius: 12px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.weak-alert-icon { font-size: 24px; }
+.weak-alert-text { font-size: 14px; color: #991B1B; }
+
+/* 空状态 */
+.empty { text-align: center; padding: 60px 20px; }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.empty-desc { font-size: 14px; color: #64748B; }
+
+/* 动画 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.card { animation: fadeIn 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="container" id="app">
+  <div class="page-header">
+    <div class="page-title">📊 学习报告</div>
+    <div class="page-sub" id="date-display"></div>
+  </div>
+  <div id="content"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'physics_learning_state_v1';
+
+function getState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try { return JSON.parse(raw); } catch(e) {}
+  }
+  return null;
+}
+
+function formatDateShort(dStr) {
+  const parts = dStr.split('-');
+  return parts[1] + '/' + parts[2];
+}
+
+function render() {
+  const state = getState();
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('date-display').textContent = '数据日期：' + today;
+
+  if (!state) {
+    document.getElementById('content').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">暂无数据</div>
+        <div class="empty-desc">请先在主应用中开始学习</div>
+      </div>
+    `;
+    return;
+  }
+
+  // 知识点定义（简化版，与主应用一致）
+  const KNOWLEDGE_NODES = [
+    { id: 'motion_measurement', name: '长度和时间的测量', chapter: '机械运动' },
+    { id: 'motion_reference', name: '参照物', chapter: '机械运动' },
+    { id: 'motion_speed', name: '速度', chapter: '机械运动' },
+    { id: 'motion_avg_speed', name: '平均速度测量', chapter: '机械运动' },
+    { id: 'sound_production', name: '声音的产生与传播', chapter: '声现象' },
+    { id: 'sound_characteristics', name: '声音的特性', chapter: '声现象' },
+    { id: 'sound_utilization', name: '声的利用', chapter: '声现象' },
+    { id: 'sound_noise', name: '噪声的控制', chapter: '声现象' },
+    { id: 'temp_measurement', name: '温度', chapter: '物态变化' },
+    { id: 'phase_melt', name: '熔化和凝固', chapter: '物态变化' },
+    { id: 'phase_vapor', name: '汽化和液化', chapter: '物态变化' },
+    { id: 'phase_sublime', name: '升华和凝华', chapter: '物态变化' },
+    { id: 'force_concept', name: '力的概念', chapter: '力与运动' },
+    { id: 'force_effect', name: '力的作用效果', chapter: '力与运动' },
+    { id: 'force_interaction', name: '力的作用是相互的', chapter: '力与运动' },
+    { id: 'elastic_concept', name: '弹力', chapter: '力与运动' },
+    { id: 'elastic_measurement', name: '弹簧测力计', chapter: '力与运动' },
+    { id: 'elastic_hooke', name: '胡克定律', chapter: '力与运动' },
+    { id: 'gravity_concept', name: '重力', chapter: '力与运动' },
+    { id: 'gravity_calculation', name: '重力的计算', chapter: '力与运动' },
+    { id: 'gravity_center', name: '重心', chapter: '力与运动' },
+    { id: 'newton_first', name: '牛顿第一定律', chapter: '力与运动' },
+    { id: 'inertia_concept', name: '惯性', chapter: '力与运动' },
+    { id: 'inertia_application', name: '惯性的应用', chapter: '力与运动' },
+    { id: 'balance_condition', name: '二力平衡条件', chapter: '力与运动' },
+    { id: 'balance_friction', name: '摩擦力与平衡', chapter: '力与运动' },
+    { id: 'friction_concept', name: '摩擦力', chapter: '力与运动' },
+    { id: 'friction_factors', name: '影响摩擦力的因素', chapter: '力与运动' },
+    { id: 'friction_application', name: '摩擦力的应用', chapter: '力与运动' },
+  ];
+
+  // 今日统计
+  const todayStat = state.dailyStats[today] || { questions: 0, correct: 0, time: 0 };
+  const todayAccuracy = todayStat.questions > 0 ? Math.round(todayStat.correct / todayStat.questions * 100) : 0;
+
+  // 本周数据
+  const weekStats = [];
+  let maxQuestions = 1;
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const dStr = d.toISOString().split('T')[0];
+    const stat = state.dailyStats[dStr] || { questions: 0, correct: 0 };
+    weekStats.push({ date: dStr, display: formatDateShort(dStr), ...stat });
+    if (stat.questions > maxQuestions) maxQuestions = stat.questions;
+  }
+
+  // 知识点掌握度
+  const nodeDetails = KNOWLEDGE_NODES.map(node => {
+    const m = state.mastery[node.id] || { score: 0, answered: 0 };
+    return { ...node, score: Math.round(m.score), answered: m.answered };
+  }).sort((a, b) => a.score - b.score);
+
+  const weakNodes = nodeDetails.filter(n => n.score < 50 && n.answered > 0).slice(0, 5);
+  const avgMastery = nodeDetails.reduce((s, n) => s + n.score, 0) / nodeDetails.length;
+
+  // 柱状图HTML
+  const barHtml = weekStats.map(s => {
+    const height = s.questions > 0 ? Math.max(8, (s.questions / maxQuestions) * 100) : 4;
+    const color = s.questions > 0 ? '#2563EB' : '#E2E8F0';
+    return `
+      <div class="bar-item">
+        <div class="bar-col" style="height:${height}px;background:${color}">
+          ${s.questions > 0 ? `<span class="bar-value">${s.questions}</span>` : ''}
+        </div>
+        <div class="bar-label">${s.display}</div>
+      </div>
+    `;
+  }).join('');
+
+  // 知识点列表HTML
+  const nodeListHtml = nodeDetails.map(n => {
+    const scoreClass = n.score >= 80 ? 'score-high' : n.score >= 50 ? 'score-mid' : 'score-low';
+    const barColor = n.score >= 80 ? '#10B981' : n.score >= 50 ? '#F59E0B' : '#EF4444';
+    return `
+      <div class="node-row">
+        <div class="node-info">
+          <div class="node-name">${n.name}</div>
+          <div class="node-chapter">${n.chapter} · 已做 ${n.answered} 题</div>
+        </div>
+        <div class="node-bar-wrap"><div class="node-bar-fill" style="width:${n.score}%;background:${barColor}"></div></div>
+        <div class="node-score ${scoreClass}">${n.score}%</div>
+      </div>
+    `;
+  }).join('');
+
+  // 薄弱提示HTML
+  const weakHtml = weakNodes.length > 0
+    ? `<div class="weak-alert">
+         <div class="weak-alert-icon">⚠️</div>
+         <div class="weak-alert-text">薄弱知识点：${weakNodes.map(n => n.name).join('、')}，建议重点复习</div>
+       </div>`
+    : '';
+
+  const totalAccuracy = state.totalAnswered > 0 ? Math.round(state.totalCorrect / state.totalAnswered * 100) : 0;
+
+  document.getElementById('content').innerHTML = `
+    ${weakHtml}
+
+    <div class="card">
+      <div class="card-title">📅 今日概况</div>
+      <div class="today-grid">
+        <div class="today-item">
+          <div class="today-value">${todayStat.questions}</div>
+          <div class="today-label">做题数</div>
+        </div>
+        <div class="today-item">
+          <div class="today-value">${todayAccuracy}%</div>
+          <div class="today-label">正确率</div>
+        </div>
+        <div class="today-item">
+          <div class="today-value">${Math.round(todayStat.time / 60)}</div>
+          <div class="today-label">用时(分)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📈 本周趋势（近7天做题数）</div>
+      <div class="bar-chart">${barHtml}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 学习总览</div>
+      <div class="today-grid">
+        <div class="today-item">
+          <div class="today-value">${state.totalAnswered}</div>
+          <div class="today-label">累计做题</div>
+        </div>
+        <div class="today-item">
+          <div class="today-value">${totalAccuracy}%</div>
+          <div class="today-label">总正确率</div>
+        </div>
+        <div class="today-item">
+          <div class="today-value">${state.streak}</div>
+          <div class="today-label">连续学习(天)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📚 知识点掌握度（${Math.round(avgMastery)}% 平均）</div>
+      <div class="node-list">${nodeListHtml}</div>
+    </div>
+  `;
+}
+
+render();
+</script>
+
+</body>
+</html>

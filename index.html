@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>物理提分助手</title>
+<style>
+/* ========== 基础重置 ========== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #F0F4F8;
+  color: #1E293B;
+  font-size: 16px;
+  line-height: 1.5;
+}
+#app {
+  display: flex; flex-direction: column;
+  height: 100vh; max-width: 900px; margin: 0 auto;
+  background: #F0F4F8;
+}
+
+/* ========== 顶部标题栏 ========== */
+header {
+  flex-shrink: 0;
+  height: 56px; padding: 0 20px;
+  background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  border-bottom: 1px solid #E2E8F0;
+  position: relative; z-index: 10;
+}
+header h1 {
+  font-size: 18px; font-weight: 600;
+}
+
+/* ========== 主内容区 ========== */
+main {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+}
+main::-webkit-scrollbar { display: none; }
+
+/* ========== 底部导航 ========== */
+nav {
+  flex-shrink: 0;
+  height: 64px;
+  background: #fff;
+  border-top: 1px solid #E2E8F0;
+  display: flex;
+}
+nav button {
+  flex: 1;
+  border: none; background: none;
+  font-size: 12px; color: #94A3B8;
+  cursor: pointer; padding: 8px 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px;
+  transition: color 0.2s;
+}
+nav button.active { color: #2563EB; font-weight: 600; }
+nav button::before {
+  content: '';
+  width: 24px; height: 24px;
+  background-size: contain;
+  opacity: 0.5;
+}
+nav button.active::before { opacity: 1; }
+/* 用 emoji 代替图标，更轻量 */
+nav button[data-page="home"]::before { content: '🏠'; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+nav button[data-page="map"]::before { content: '🗺️'; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+nav button[data-page="review"]::before { content: '📋'; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+nav button[data-page="settings"]::before { content: '⚙️'; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+
+/* ========== 通用按钮 ========== */
+.btn-primary {
+  background: #2563EB; color: #fff;
+  border: none; border-radius: 12px;
+  padding: 14px 28px;
+  font-size: 16px; font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+.btn-primary:hover { background: #1D4ED8; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { background: #CBD5E1; cursor: not-allowed; }
+.btn-large { width: 100%; padding: 16px; font-size: 17px; }
+.btn-secondary {
+  background: #F1F5F9; color: #475569;
+  border: 1px solid #E2E8F0; border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 14px; cursor: pointer;
+}
+.btn-secondary:hover { background: #E2E8F0; }
+.btn-danger {
+  background: #FEE2E2; color: #DC2626;
+  border: 1px solid #FECACA; border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 14px; cursor: pointer;
+}
+.btn-block { width: 100%; margin-bottom: 10px; }
+
+/* ========== 首页 ========== */
+.welcome-bar {
+  margin-bottom: 16px;
+}
+.welcome-text {
+  font-size: 20px; font-weight: 700;
+  color: #1E293B;
+}
+
+.task-card {
+  background: #fff; border-radius: 16px;
+  padding: 24px; margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.task-card.completed {
+  background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+}
+.task-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.task-title { font-size: 18px; font-weight: 700; }
+.task-sub { font-size: 14px; color: #64748B; }
+
+.progress-track {
+  height: 8px; background: #E2E8F0;
+  border-radius: 4px; overflow: hidden;
+  margin-bottom: 12px;
+}
+.progress-bar-home {
+  height: 100%; background: linear-gradient(90deg, #2563EB, #3B82F6);
+  border-radius: 4px; transition: width 0.5s ease;
+}
+
+.task-desc {
+  font-size: 14px; color: #64748B;
+  margin-bottom: 20px;
+}
+
+.stats-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px; margin-bottom: 16px;
+}
+.stat-card {
+  background: #fff; border-radius: 14px;
+  padding: 16px 12px; text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.stat-value {
+  font-size: 26px; font-weight: 800;
+  color: #2563EB; margin-bottom: 4px;
+}
+.stat-label {
+  font-size: 12px; color: #64748B;
+}
+
+.section-box {
+  background: #fff; border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.section-title {
+  font-size: 15px; font-weight: 700;
+  margin-bottom: 12px; color: #334155;
+}
+
+.weak-list { display: flex; flex-direction: column; gap: 8px; }
+.weak-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; background: #F8FAFC;
+  border-radius: 10px; cursor: pointer;
+  border-left: 3px solid #F59E0B;
+  transition: background 0.15s;
+}
+.weak-item:hover { background: #F1F5F9; }
+.weak-name { font-size: 14px; }
+.weak-score { font-size: 14px; font-weight: 700; color: #F59E0B; }
+
+/* ========== 答题页 ========== */
+.quiz-page { padding-bottom: 20px; }
+.quiz-meta {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+.quiz-tag {
+  font-size: 12px; color: #64748B;
+  background: #F1F5F9; padding: 4px 10px;
+  border-radius: 6px;
+}
+.quiz-reason-tag {
+  font-size: 12px; padding: 4px 10px;
+  border-radius: 6px; font-weight: 500;
+}
+.quiz-reason-tag.复习 { background: #FEF3C7; color: #D97706; }
+.quiz-reason-tag.错题 { background: #FEE2E2; color: #DC2626; }
+.quiz-reason-tag.挑战 { background: #DBEAFE; color: #2563EB; }
+.quiz-reason-tag.新题 { background: #D1FAE5; color: #059669; }
+.quiz-diff {
+  font-size: 12px; color: #F59E0B;
+  margin-left: auto;
+}
+
+.question-box {
+  background: #fff; border-radius: 16px;
+  padding: 24px; margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.question-box.faded { opacity: 0.7; }
+.question-text {
+  font-size: 18px; font-weight: 600;
+  line-height: 1.7;
+}
+
+.options-list {
+  display: flex; flex-direction: column;
+  gap: 10px; margin-bottom: 24px;
+}
+.option-btn {
+  display: flex; align-items: center; gap: 12px;
+  background: #fff; border: 2px solid #E2E8F0;
+  border-radius: 14px; padding: 16px 18px;
+  font-size: 15px; cursor: pointer;
+  text-align: left; width: 100%;
+  transition: all 0.15s;
+}
+.option-btn:hover:not(:disabled) { border-color: #93C5FD; background: #F8FAFC; }
+.option-btn.selected {
+  border-color: #2563EB; background: #EFF6FF;
+}
+.option-btn.correct {
+  border-color: #10B981; background: #ECFDF5;
+}
+.option-btn.wrong {
+  border-color: #EF4444; background: #FEF2F2;
+}
+.option-btn.neutral { opacity: 0.5; }
+.option-btn.static { cursor: default; pointer-events: none; }
+
+.option-letter {
+  width: 32px; height: 32px;
+  border-radius: 50%; background: #F1F5F9;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; color: #475569;
+  flex-shrink: 0;
+}
+.option-btn.selected .option-letter { background: #2563EB; color: #fff; }
+.option-btn.correct .option-letter { background: #10B981; color: #fff; }
+.option-btn.wrong .option-letter { background: #EF4444; color: #fff; }
+
+/* 结果条 */
+.result-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 18px; border-radius: 12px;
+  margin-bottom: 16px; font-weight: 700;
+}
+.result-bar.correct { background: #ECFDF5; color: #059669; }
+.result-bar.wrong { background: #FEF2F2; color: #DC2626; }
+.result-icon { font-size: 22px; }
+
+/* 解析 */
+.explanation-box {
+  background: #fff; border-radius: 16px;
+  padding: 20px; margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.exp-step { margin-bottom: 16px; }
+.exp-step:last-child { margin-bottom: 0; }
+.exp-label {
+  font-size: 13px; font-weight: 700;
+  color: #475569; margin-bottom: 6px;
+}
+.exp-text { font-size: 14px; color: #334155; line-height: 1.7; }
+
+/* 练习结果页 */
+.result-page { text-align: center; padding: 40px 20px; }
+.result-emoji { font-size: 64px; margin-bottom: 16px; }
+.result-title { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+.result-msg { font-size: 15px; color: #64748B; margin-bottom: 32px; }
+.result-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px; margin-bottom: 32px;
+}
+.result-stat { background: #fff; border-radius: 14px; padding: 20px; }
+.result-value { font-size: 28px; font-weight: 800; color: #2563EB; }
+.result-label { font-size: 13px; color: #64748B; margin-top: 4px; }
+
+/* ========== 知识地图 ========== */
+.map-page { padding-bottom: 20px; }
+.chapter-block { margin-bottom: 20px; }
+.chapter-title {
+  font-size: 15px; font-weight: 700; color: #475569;
+  margin-bottom: 12px; padding-left: 4px;
+}
+.nodes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+.node-cell {
+  background: #fff; border-radius: 14px;
+  padding: 16px 12px; text-align: center;
+  cursor: pointer; position: relative;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: transform 0.15s, box-shadow 0.15s;
+  border: 2px solid transparent;
+}
+.node-cell:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.node-cell.locked { opacity: 0.5; }
+.node-cell.mastered { border-color: #10B981; }
+.node-cell.learning { border-color: #F59E0B; }
+.node-cell.started { border-color: #2563EB; }
+
+.node-status {
+  width: 10px; height: 10px; border-radius: 50%;
+  position: absolute; top: 8px; right: 8px;
+}
+.node-cell.locked .node-status { background: #CBD5E1; }
+.node-cell.mastered .node-status { background: #10B981; }
+.node-cell.learning .node-status { background: #F59E0B; }
+.node-cell.started .node-status { background: #2563EB; }
+
+.node-name {
+  font-size: 13px; font-weight: 600;
+  margin-bottom: 8px; line-height: 1.4;
+}
+.node-bar {
+  height: 5px; background: #E2E8F0;
+  border-radius: 3px; overflow: hidden;
+  margin-bottom: 6px;
+}
+.node-fill {
+  height: 100%; background: #2563EB;
+  border-radius: 3px; transition: width 0.4s;
+}
+.node-cell.mastered .node-fill { background: #10B981; }
+.node-pct { font-size: 12px; color: #64748B; }
+
+/* ========== 错题本 ========== */
+.review-page { padding-bottom: 20px; }
+.review-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+.review-count { font-size: 15px; font-weight: 600; }
+.review-list { display: flex; flex-direction: column; gap: 10px; }
+.review-card {
+  background: #fff; border-radius: 14px;
+  padding: 16px; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-left: 3px solid #EF4444;
+  transition: background 0.15s;
+}
+.review-card:hover { background: #F8FAFC; }
+.review-q { font-size: 14px; font-weight: 500; margin-bottom: 8px; line-height: 1.5; }
+.review-meta {
+  font-size: 12px; color: #64748B;
+  display: flex; gap: 12px; align-items: center;
+}
+.diff-tag {
+  background: #FEF3C7; color: #D97706;
+  padding: 2px 8px; border-radius: 4px;
+  font-size: 11px;
+}
+
+.empty-state {
+  text-align: center; padding: 60px 20px;
+}
+.empty-icon { font-size: 56px; margin-bottom: 16px; }
+.empty-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.empty-desc { font-size: 14px; color: #64748B; }
+
+/* ========== 设置 ========== */
+.settings-page { padding-bottom: 20px; }
+.setting-group {
+  background: #fff; border-radius: 16px;
+  padding: 20px; margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.setting-label { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.setting-desc { font-size: 13px; color: #64748B; margin-bottom: 16px; }
+
+.goal-btns {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.goal-btn {
+  padding: 12px; border-radius: 10px;
+  border: 2px solid #E2E8F0; background: #fff;
+  font-size: 15px; font-weight: 600; color: #475569;
+  cursor: pointer; text-align: center;
+  transition: all 0.15s;
+}
+.goal-btn.active {
+  border-color: #2563EB; background: #EFF6FF; color: #2563EB;
+}
+
+.about-text { font-size: 14px; color: #64748B; line-height: 1.8; }
+
+/* ========== 动画 ========== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+main > div { animation: fadeIn 0.25s ease; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <h1 id="page-title">今日任务</h1>
+  </header>
+
+  <main id="main-content"></main>
+
+  <nav id="nav">
+    <button data-page="home" class="active">今日任务</button>
+    <button data-page="map">知识地图</button>
+    <button data-page="review">错题本</button>
+    <button data-page="settings">设置</button>
+  </nav>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
