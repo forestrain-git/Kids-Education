@@ -27,11 +27,14 @@ jobs:
           cloudbase login --apiKeyId "$SECRET_ID" --apiKey "$SECRET_KEY"
 
           echo "Creating cloud function 'api' if not exists..."
-          cloudbase fn create api --runTime Nodejs18 --memorySize 128 --timeout 5 --yes || echo "Function may already exist, continuing..."
+          cloudbase fn create api --runTime Nodejs18 --memorySize 128 --timeout 5 --yes || echo "Create step done (may already exist)"
 
           echo "Deploying cloud function 'api'..."
-          cloudbase fn deploy api --yes --install-deps
+          cloudbase fn deploy api --yes --install-deps --force
           echo "Cloud function deployed."
+
+          echo "Listing functions to verify..."
+          cloudbase fn list || true
 
       - name: Deploy to CloudBase Hosting
         env:
@@ -39,6 +42,7 @@ jobs:
           SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
         run: |
           set -e
+          rm -rf _deploy
           mkdir -p _deploy
           cp index.html parent.html app.js data.js extra_questions.js cloud-sync.js _deploy/
 
