@@ -8,7 +8,8 @@ const db = app.database();
 function generateUid() {
   const ts = Date.now().toString(36);
   const rnd = Math.random().toString(36).substring(2, 8);
-  return ts + rnd;
+  const extra = Math.random().toString(36).substring(2, 6);
+  return ts + rnd + extra;
 }
 
 function corsHeaders() {
