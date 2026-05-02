@@ -1,5 +1,5 @@
 const CloudSync = (function () {
-  const BASE = 'https://kids-education-d8gak4uog7d6f09fa.service.tcloudbase.com/api';
+  const BASE = 'https://kids-education-d8gak4uog7d6f09fa-1419212374.ap-shanghai.app.tcloudbase.com/api';
 
   async function generateUid() {
     try {
