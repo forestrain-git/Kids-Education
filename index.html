@@ -470,6 +470,12 @@ main > div { animation: fadeIn 0.25s ease; }
   const params = new URLSearchParams(location.search);
   let uid = params.get('uid');
 
+  // 本地开发/测试环境：无 uid 且不强制测试时跳过 generateUid 重定向
+  const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  if (isLocalhost && !uid && params.get('cloudSyncTest') !== '1') {
+    return;
+  }
+
   if (!uid) {
     if (typeof CloudSync !== 'undefined') {
       CloudSync.generateUid().then(function (res) {
