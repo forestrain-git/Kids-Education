@@ -53,6 +53,16 @@ var TAG_TO_QUESTION_TYPE = {
   '完全不会': '概念型',
 };
 
+// 今日成就定义
+var ACHIEVEMENTS = {
+  firstQuestion: { icon: '🎯', name: '今日首题' },
+  streak3: { icon: '🔥', name: '连对3题' },
+  weakBreakthrough: { icon: '🧠', name: '攻克薄弱点' },
+  correctMistake: { icon: '❌', name: '知错能改' },
+  newNode: { icon: '⭐', name: '新知初探' },
+  dailyGoal: { icon: '🏆', name: '完成目标' },
+};
+
 // 存储模块
 var Storage = {
   KEY: 'physics_learning_state_v1',
@@ -60,7 +70,12 @@ var Storage = {
   getState() {
     const raw = localStorage.getItem(this.KEY);
     if (raw) {
-      try { return JSON.parse(raw); } catch(e) { console.error('Parse error', e); }
+      try {
+        const state = JSON.parse(raw);
+        // 向后兼容：旧数据缺少 dailyAchievements
+        if (!state.dailyAchievements) state.dailyAchievements = {};
+        return state;
+      } catch(e) { console.error('Parse error', e); }
     }
     return this.getDefaultState();
   },
@@ -72,6 +87,7 @@ var Storage = {
       wrongQuestions: [],
       reviewSchedule: {},
       dailyStats: {},
+      dailyAchievements: {}, // { "YYYY-MM-DD": { "badgeId": true } }
       firstUse: new Date().toISOString().split('T')[0],
       totalAnswered: 0,
       totalCorrect: 0,
@@ -112,19 +128,128 @@ var Engine = {
     return state.mastery[nodeId] || { score: 0, answered: 0, correct: 0, lastReview: null, streak: 0 };
   },
 
+  getDecayLambda(nodeId, state) {
+    const m = (state || Storage.getState()).mastery[nodeId];
+    if (!m || m.answered === 0) return 0.05;
+    const wrongRate = (m.totalWrong || 0) / m.answered;
+    return 0.03 + wrongRate * 0.14;
+  },
+
+  getEffectiveMastery(nodeId, state) {
+    const s = state || Storage.getState();
+    const m = s.mastery[nodeId];
+    if (!m || !m.lastReview) return m ? m.score : 0;
+
+    const daysSince = Math.floor((Date.now() - new Date(m.lastReview).getTime()) / (1000 * 60 * 60 * 24));
+    if (daysSince <= 0) return m.score;
+
+    const lambda = this.getDecayLambda(nodeId, s);
+    const decayed = m.score * Math.exp(-lambda * daysSince);
+    return Math.max(0, Math.round(decayed));
+  },
+
+  arePrerequisitesMet(nodeId, state) {
+    const node = KNOWLEDGE_NODES.find(n => n.id === nodeId);
+    if (!node || !node.prerequisites || node.prerequisites.length === 0) return true;
+    const s = state || Storage.getState();
+    return node.prerequisites.every(preId => this.getEffectiveMastery(preId, s) >= 50);
+  },
+
+  getUnmetPrerequisites(nodeId, state, visited) {
+    visited = visited || new Set();
+    if (visited.has(nodeId)) return [];
+    visited.add(nodeId);
+
+    const node = KNOWLEDGE_NODES.find(n => n.id === nodeId);
+    if (!node || !node.prerequisites || node.prerequisites.length === 0) return [];
+
+    const s = state || Storage.getState();
+    const unmet = [];
+    for (const preId of node.prerequisites) {
+      if (this.getEffectiveMastery(preId, s) < 50) {
+        unmet.push(...this.getUnmetPrerequisites(preId, s, visited));
+        unmet.push(preId);
+      }
+    }
+    return [...new Set(unmet)];
+  },
+
+  checkAchievements(state, questionId, correct, nodeId, isReview, sessionCorrectStreak, oldEffectiveScore) {
+    const today = new Date().toISOString().split('T')[0];
+    if (!state.dailyAchievements) state.dailyAchievements = {};
+    if (!state.dailyAchievements[today]) state.dailyAchievements[today] = {};
+    const earned = state.dailyAchievements[today];
+    const newlyEarned = [];
+
+    // 1. 今日首题
+    if (!earned.firstQuestion) {
+      const ts = state.dailyStats[today];
+      if (ts && ts.questions >= 1) {
+        earned.firstQuestion = true;
+        newlyEarned.push('firstQuestion');
+      }
+    }
+
+    // 2. 连对3题
+    if (!earned.streak3 && correct && sessionCorrectStreak >= 3) {
+      earned.streak3 = true;
+      newlyEarned.push('streak3');
+    }
+
+    // 3. 攻克薄弱点
+    if (!earned.weakBreakthrough && correct) {
+      const newEff = this.getEffectiveMastery(nodeId, state);
+      if (oldEffectiveScore < 50 && newEff >= 50) {
+        earned.weakBreakthrough = true;
+        newlyEarned.push('weakBreakthrough');
+      }
+    }
+
+    // 4. 知错能改
+    if (!earned.correctMistake && correct) {
+      const wasWrong = state.history.some(h => h.questionId === questionId && !h.correct);
+      if (wasWrong) {
+        earned.correctMistake = true;
+        newlyEarned.push('correctMistake');
+      }
+    }
+
+    // 5. 新知初探
+    if (!earned.newNode && correct) {
+      const m = state.mastery[nodeId];
+      if (m && m.answered === 1) {
+        earned.newNode = true;
+        newlyEarned.push('newNode');
+      }
+    }
+
+    // 6. 完成目标
+    if (!earned.dailyGoal) {
+      const ts = state.dailyStats[today];
+      if (ts && ts.questions >= state.dailyGoal) {
+        earned.dailyGoal = true;
+        newlyEarned.push('dailyGoal');
+      }
+    }
+
+    return newlyEarned;
+  },
+
   updateMastery(state, nodeId, correct) {
     let m = state.mastery[nodeId] || { score: 0, answered: 0, correct: 0, lastReview: null, streak: 0 };
+    const baseScore = this.getEffectiveMastery(nodeId, state);
 
     m.answered++;
     if (correct) {
       m.correct++;
       m.streak++;
-      const increment = Math.max(5, (100 - m.score) * 0.15);
-      m.score = Math.min(100, m.score + increment);
+      const increment = Math.max(5, (100 - baseScore) * 0.15);
+      m.score = Math.min(100, Math.round(baseScore + increment));
     } else {
       m.streak = 0;
-      const decrement = Math.max(5, m.score * 0.12);
-      m.score = Math.max(0, m.score - decrement);
+      m.totalWrong = (m.totalWrong || 0) + 1;
+      const decrement = Math.max(5, baseScore * 0.12);
+      m.score = Math.max(0, Math.round(baseScore - decrement));
     }
 
     m.lastReview = new Date().toISOString();
@@ -229,20 +354,36 @@ var Engine = {
       if (!added.has(nodeId)) { nodeQueue.push(nodeId); added.add(nodeId); }
     }
 
-    // 3) ZPD 知识点（掌握度20-80，按掌握度升序）
-    const zpdNodes = Object.entries(state.mastery)
-      .filter(([_, m]) => m.score >= 20 && m.score <= 80)
-      .sort((a, b) => a[1].score - b[1].score)
-      .map(([id]) => id);
+    // 3) ZPD 知识点（有效掌握度20-80，前置条件需满足）
+    const zpdNodes = Object.keys(state.mastery)
+      .filter(id => {
+        const eff = this.getEffectiveMastery(id, state);
+        return eff >= 20 && eff <= 80;
+      })
+      .sort((a, b) => this.getEffectiveMastery(a, state) - this.getEffectiveMastery(b, state));
     for (const nodeId of zpdNodes) {
-      if (!added.has(nodeId)) { nodeQueue.push(nodeId); added.add(nodeId); }
+      if (added.has(nodeId)) continue;
+      const unmet = this.getUnmetPrerequisites(nodeId, state);
+      for (const preId of unmet) {
+        if (!added.has(preId)) { nodeQueue.push(preId); added.add(preId); }
+      }
+      if (this.arePrerequisitesMet(nodeId, state)) {
+        nodeQueue.push(nodeId); added.add(nodeId);
+      }
     }
 
-    // 4) 全新知识点（未学过的）
+    // 4) 全新知识点（未学过的，前置条件需满足）
     const learnedNodes = new Set(Object.keys(state.mastery));
     const newNodes = KNOWLEDGE_NODES.map(n => n.id).filter(id => !learnedNodes.has(id));
     for (const nodeId of newNodes) {
-      if (!added.has(nodeId)) { nodeQueue.push(nodeId); added.add(nodeId); }
+      if (added.has(nodeId)) continue;
+      const unmet = this.getUnmetPrerequisites(nodeId, state);
+      for (const preId of unmet) {
+        if (!added.has(preId)) { nodeQueue.push(preId); added.add(preId); }
+      }
+      if (this.arePrerequisitesMet(nodeId, state)) {
+        nodeQueue.push(nodeId); added.add(nodeId);
+      }
     }
 
     // 获取每个知识点的优先题型（根据做题标签统计）
@@ -326,16 +467,17 @@ var Engine = {
     return recommended.slice(0, count);
   },
 
-  recordAnswer(questionId, correct, timeSpent, answerTag) {
+  recordAnswer(questionId, correct, timeSpent, answerTag, sessionCorrectStreak) {
     const state = Storage.getState();
     const q = ALL_QUESTIONS.find(q => q.id === questionId);
     const timestamp = new Date().toISOString();
+    const nodeId = q ? q.knowledge_node_id : null;
+    const oldEffectiveScore = nodeId ? this.getEffectiveMastery(nodeId, state) : 0;
 
     state.history.push({ questionId, correct, timestamp, timeSpent, answerTag });
 
     // 更新标签统计
     if (answerTag && q) {
-      const nodeId = q.knowledge_node_id;
       if (!state.tagStats[nodeId]) state.tagStats[nodeId] = {};
       state.tagStats[nodeId][answerTag] = (state.tagStats[nodeId][answerTag] || 0) + 1;
       state.answerTags[questionId] = answerTag;
@@ -360,11 +502,17 @@ var Engine = {
     if (correct) state.dailyStats[today].correct++;
     state.dailyStats[today].time += timeSpent;
 
+    let newlyEarned = [];
     if (q) {
-      this.updateMastery(state, q.knowledge_node_id, correct);
+      this.updateMastery(state, nodeId, correct);
+      const isReview = state.reviewSchedule[nodeId] && state.reviewSchedule[nodeId].nextReview && state.reviewSchedule[nodeId].nextReview <= today;
+      newlyEarned = this.checkAchievements(state, questionId, correct, nodeId, isReview, sessionCorrectStreak || 0, oldEffectiveScore);
+      Storage.saveState(state);
     } else {
       Storage.saveState(state);
     }
+
+    return newlyEarned;
   },
 
   getStats() {
@@ -372,19 +520,23 @@ var Engine = {
     const today = new Date().toISOString().split('T')[0];
     const todayStat = state.dailyStats[today] || { questions: 0, correct: 0, time: 0 };
 
-    const masteryValues = Object.values(state.mastery);
-    const avgMastery = masteryValues.length > 0
-      ? masteryValues.reduce((a, b) => a + b.score, 0) / masteryValues.length
+    const masteryIds = Object.keys(state.mastery);
+    const avgMastery = masteryIds.length > 0
+      ? masteryIds.reduce((sum, id) => sum + this.getEffectiveMastery(id, state), 0) / masteryIds.length
       : 0;
 
-    const weakNodes = Object.entries(state.mastery)
-      .map(([id, m]) => ({ ...m, id }))
+    const weakNodes = masteryIds
+      .map(id => ({ id, score: this.getEffectiveMastery(id, state) }))
       .sort((a, b) => a.score - b.score)
       .slice(0, 5)
       .map(m => {
         const node = KNOWLEDGE_NODES.find(n => n.id === m.id);
         return { name: node ? node.name : m.id, score: Math.round(m.score) };
       });
+
+    const todayAchievements = state.dailyAchievements[today]
+      ? Object.keys(state.dailyAchievements[today]).filter(k => state.dailyAchievements[today][k])
+      : [];
 
     return {
       totalAnswered: state.totalAnswered,
@@ -398,6 +550,7 @@ var Engine = {
       streak: state.streak,
       wrongCount: state.wrongQuestions.length,
       dailyGoal: state.dailyGoal,
+      todayAchievements,
     };
   },
 
@@ -431,11 +584,12 @@ var Engine = {
 
     // 知识点掌握度详情
     const nodeDetails = KNOWLEDGE_NODES.map(node => {
-      const m = state.mastery[node.id] || { score: 0, answered: 0 };
+      const eff = this.getEffectiveMastery(node.id, state);
+      const m = state.mastery[node.id] || { answered: 0 };
       return {
         name: node.name,
         chapter: node.chapter,
-        score: Math.round(m.score),
+        score: Math.round(eff),
         answered: m.answered,
       };
     }).sort((a, b) => a.score - b.score);
@@ -462,6 +616,7 @@ var UI = {
   quizStartTime: 0,
   selectedOption: null,
   submitted: false,
+  sessionCorrectStreak: 0,
 
   init() {
     this.bindNavEvents();
@@ -509,9 +664,12 @@ var UI = {
     container.innerHTML = `
       <div class="home-page">
         <div class="welcome-bar">
-          <div class="welcome-text">
-            ${stats.streak > 1 ? `🔥 连续学习 ${stats.streak} 天` : '欢迎回来，开始今天的学习吧'}
-          </div>
+          <div class="welcome-text">欢迎回来，开始今天的学习吧</div>
+          ${stats.todayAchievements.length > 0 ? `
+            <div class="achievement-row">
+              ${stats.todayAchievements.map(id => ACHIEVEMENTS[id] ? `<span class="ach-badge" title="${ACHIEVEMENTS[id].name}">${ACHIEVEMENTS[id].icon}</span>` : '').join('')}
+            </div>
+          ` : ''}
         </div>
 
         <div class="task-card ${remaining === 0 ? 'completed' : ''}">
@@ -643,6 +801,9 @@ var UI = {
     const correct = selectedText === q.answer;
     const timeSpent = Math.round((Date.now() - this.quizStartTime) / 1000);
 
+    if (correct) this.sessionCorrectStreak++;
+    else this.sessionCorrectStreak = 0;
+
     // 保存答题状态，等用户看完解析/选好标签后再记录
     this.currentAnswer = { questionId: q.id, correct, selectedText, timeSpent };
 
@@ -732,7 +893,7 @@ var UI = {
     // 记录答案（包含标签）
     if (this.currentAnswer) {
       const tag = !this.currentAnswer.correct ? this.selectedTag : null;
-      Engine.recordAnswer(this.currentAnswer.questionId, this.currentAnswer.correct, this.currentAnswer.timeSpent, tag);
+      Engine.recordAnswer(this.currentAnswer.questionId, this.currentAnswer.correct, this.currentAnswer.timeSpent, tag, this.sessionCorrectStreak);
     }
     this.currentAnswer = null;
     this.selectedTag = null;
@@ -790,15 +951,20 @@ var UI = {
         ${CHAPTERS.map(ch => {
           const nodesHtml = ch.nodes.map(nodeId => {
             const node = KNOWLEDGE_NODES.find(n => n.id === nodeId);
-            const m = state.mastery[nodeId] || { score: 0, answered: 0 };
+            const eff = Engine.getEffectiveMastery(nodeId, state);
+            const m = state.mastery[nodeId] || { answered: 0 };
+            const preMet = Engine.arePrerequisitesMet(nodeId, state);
             let level = 'locked';
-            if (m.score >= 80) level = 'mastered';
-            else if (m.score >= 50) level = 'learning';
-            else if (m.score > 0 || m.answered > 0) level = 'started';
-            const pct = Math.round(m.score);
+            if (preMet) {
+              if (eff >= 80) level = 'mastered';
+              else if (eff >= 50) level = 'learning';
+              else if (eff > 0 || m.answered > 0) level = 'started';
+            }
+            const pct = Math.round(eff);
+            const clickAttr = preMet ? `onclick="UI.startNodeQuiz('${nodeId}')"` : '';
 
             return `
-              <div class="node-cell ${level}" onclick="UI.startNodeQuiz('${nodeId}')">
+              <div class="node-cell ${level}" ${clickAttr}>
                 <div class="node-status"></div>
                 <div class="node-name">${node.name}</div>
                 <div class="node-bar"><div class="node-fill" style="width:${pct}%"></div></div>

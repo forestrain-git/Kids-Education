@@ -143,6 +143,25 @@ function formatDateShort(dStr) {
   return parts[1] + '/' + parts[2];
 }
 
+function getDecayLambda(nodeId, state) {
+  const m = state.mastery[nodeId];
+  if (!m || m.answered === 0) return 0.05;
+  const wrongRate = (m.totalWrong || 0) / m.answered;
+  return 0.03 + wrongRate * 0.14;
+}
+
+function getEffectiveMastery(nodeId, state) {
+  const m = state.mastery[nodeId];
+  if (!m || !m.lastReview) return m ? m.score : 0;
+
+  const daysSince = Math.floor((Date.now() - new Date(m.lastReview).getTime()) / (1000 * 60 * 60 * 24));
+  if (daysSince <= 0) return m.score;
+
+  const lambda = getDecayLambda(nodeId, state);
+  const decayed = m.score * Math.exp(-lambda * daysSince);
+  return Math.max(0, Math.round(decayed));
+}
+
 function renderWithState(state) {
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('date-display').textContent = '数据日期：' + today;
@@ -206,10 +225,11 @@ function renderWithState(state) {
     if (stat.questions > maxQuestions) maxQuestions = stat.questions;
   }
 
-  // 知识点掌握度
+  // 知识点掌握度（使用有效掌握度）
   const nodeDetails = KNOWLEDGE_NODES.map(node => {
-    const m = state.mastery[node.id] || { score: 0, answered: 0 };
-    return { ...node, score: Math.round(m.score), answered: m.answered };
+    const eff = getEffectiveMastery(node.id, state);
+    const m = state.mastery[node.id] || { answered: 0 };
+    return { ...node, score: Math.round(eff), answered: m.answered };
   }).sort((a, b) => a.score - b.score);
 
   const weakNodes = nodeDetails.filter(n => n.score < 50 && n.answered > 0).slice(0, 5);

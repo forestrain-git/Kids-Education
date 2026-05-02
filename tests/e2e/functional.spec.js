@@ -47,16 +47,17 @@ test.describe('首页 / 今日任务', () => {
     expect(statValues).toEqual(['0%', '0%', '0']);
   });
 
-  test('连续学习天数显示', async ({ page }) => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
+  test('今日成就显示', async ({ page }) => {
+    const today = new Date().toISOString().split('T')[0];
     await setStorage(page, {
       ...(await getStorage(page) || getDefaultState()),
-      streak: 3,
-      lastStudyDate: yesterday.toISOString().split('T')[0],
+      dailyAchievements: { [today]: { firstQuestion: true, streak3: true } },
     });
     await page.reload();
-    await expect(page.locator('.welcome-text')).toContainText('连续学习 3 天');
+    await expect(page.locator('.achievement-row')).toBeVisible();
+    const badges = await page.locator('.ach-badge').allTextContents();
+    expect(badges).toContain('🎯');
+    expect(badges).toContain('🔥');
   });
 
   test('今日目标进度计算', async ({ page }) => {
