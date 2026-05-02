@@ -22,20 +22,27 @@ jobs:
           SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
           SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
         run: |
+          set -e
+          echo "Logging into CloudBase..."
           cloudbase login --apiKeyId "$SECRET_ID" --apiKey "$SECRET_KEY"
+          echo "Deploying cloud function 'api'..."
           cloudbase fn deploy api --yes --install-deps
+          echo "Cloud function deployed."
 
       - name: Deploy to CloudBase Hosting
         env:
           SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
           SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
         run: |
-          # 创建临时部署目录，只包含需要的文件
+          set -e
           mkdir -p _deploy
-          cp index.html parent.html app.js data.js extra_questions.js _deploy/
-          # 如有新增前端文件，一并复制
-          if [ -f cloud-sync.js ]; then cp cloud-sync.js _deploy/; fi
+          cp index.html parent.html app.js data.js extra_questions.js cloud-sync.js _deploy/
 
-          # 登录并部署
+          echo "Files in _deploy:"
+          ls -la _deploy/
+
+          echo "Logging into CloudBase..."
           cloudbase login --apiKeyId "$SECRET_ID" --apiKey "$SECRET_KEY"
+          echo "Deploying to hosting..."
           cloudbase hosting deploy _deploy / -e kids-education-d8gak4uog7d6f09fa --yes
+          echo "Hosting deployed."
