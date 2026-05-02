@@ -25,6 +25,10 @@ jobs:
           set -e
           echo "Logging into CloudBase..."
           cloudbase login --apiKeyId "$SECRET_ID" --apiKey "$SECRET_KEY"
+
+          echo "Creating cloud function 'api' if not exists..."
+          cloudbase fn create api --runTime Nodejs18 --memorySize 128 --timeout 5 --yes || echo "Function may already exist, continuing..."
+
           echo "Deploying cloud function 'api'..."
           cloudbase fn deploy api --yes --install-deps
           echo "Cloud function deployed."
