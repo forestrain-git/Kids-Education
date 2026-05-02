@@ -23,7 +23,7 @@ jobs:
           SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
         run: |
           cloudbase login --apiKeyId "$SECRET_ID" --apiKey "$SECRET_KEY"
-          cloudbase fn deploy --yes --install-deps
+          cloudbase fn deploy api --yes --install-deps
 
       - name: Deploy to CloudBase Hosting
         env:
