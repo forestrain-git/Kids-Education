@@ -17,6 +17,14 @@ jobs:
           npm install -g @cloudbase/cli
           cloudbase --version
 
+      - name: Deploy Cloud Functions
+        env:
+          SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
+          SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
+        run: |
+          cloudbase login --apiKeyId "$SECRET_ID" --apiKey "$SECRET_KEY"
+          cloudbase fn deploy --yes --install-deps
+
       - name: Deploy to CloudBase Hosting
         env:
           SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
@@ -25,6 +33,8 @@ jobs:
           # 创建临时部署目录，只包含需要的文件
           mkdir -p _deploy
           cp index.html parent.html app.js data.js extra_questions.js _deploy/
+          # 如有新增前端文件，一并复制
+          if [ -f cloud-sync.js ]; then cp cloud-sync.js _deploy/; fi
 
           # 登录并部署
           cloudbase login --apiKeyId "$SECRET_ID" --apiKey "$SECRET_KEY"

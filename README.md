@@ -2,6 +2,13 @@
 
 八年级物理自适应学习网页应用，专为物理薄弱学生设计。
 
+## 在线访问
+
+| 端 | 链接 |
+|---|---|
+| 学生端 | https://kids-education-d8gak4uog7d6f09fa-1419212374.tcloudbaseapp.com/ |
+| 家长看板 | https://kids-education-d8gak4uog7d6f09fa-1419212374.tcloudbaseapp.com/parent.html |
+
 ## 核心功能
 
 - **自适应推荐**：根据掌握度动态推送"比能力高一点点"的题目

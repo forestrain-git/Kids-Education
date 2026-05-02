@@ -1,0 +1,26 @@
+{
+  "name": "kids-education",
+  "version": "1.0.0",
+  "description": "八年级物理自适应学习网页应用，专为物理薄弱学生设计。",
+  "main": "app.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/forestrain-git/Kids-Education.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/forestrain-git/Kids-Education/issues"
+  },
+  "homepage": "https://github.com/forestrain-git/Kids-Education#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}

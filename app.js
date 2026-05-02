@@ -108,8 +108,7 @@ var Engine = {
     return state.mastery[nodeId] || { score: 0, answered: 0, correct: 0, lastReview: null, streak: 0 };
   },
 
-  updateMastery(nodeId, correct) {
-    const state = Storage.getState();
+  updateMastery(state, nodeId, correct) {
     let m = state.mastery[nodeId] || { score: 0, answered: 0, correct: 0, lastReview: null, streak: 0 };
 
     m.answered++;
@@ -127,7 +126,7 @@ var Engine = {
     m.lastReview = new Date().toISOString();
     state.mastery[nodeId] = m;
 
-    this.updateReviewSchedule(nodeId, correct);
+    this.updateReviewSchedule(state, nodeId, correct);
     this.updateStreak(state);
     Storage.saveState(state);
     return m;
@@ -149,8 +148,7 @@ var Engine = {
     state.lastStudyDate = today;
   },
 
-  updateReviewSchedule(nodeId, correct) {
-    const state = Storage.getState();
+  updateReviewSchedule(state, nodeId, correct) {
     const intervals = [1, 3, 7, 14, 30];
     let schedule = state.reviewSchedule[nodeId];
 
@@ -359,7 +357,7 @@ var Engine = {
     state.dailyStats[today].time += timeSpent;
 
     if (q) {
-      this.updateMastery(q.knowledge_node_id, correct);
+      this.updateMastery(state, q.knowledge_node_id, correct);
     } else {
       Storage.saveState(state);
     }
