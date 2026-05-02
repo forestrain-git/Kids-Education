@@ -30,7 +30,7 @@ jobs:
           cloudbase fn create api --runTime Nodejs18 --memorySize 128 --timeout 5 --yes || echo "Create step done (may already exist)"
 
           echo "Deploying cloud function 'api'..."
-          cloudbase fn deploy api --yes --install-deps --force
+          cloudbase fn deploy api --yes --force
           echo "Cloud function deployed."
 
           echo "Listing functions to verify..."
@@ -52,5 +52,5 @@ jobs:
           echo "Logging into CloudBase..."
           cloudbase login --apiKeyId "$SECRET_ID" --apiKey "$SECRET_KEY"
           echo "Deploying to hosting..."
-          cloudbase hosting deploy _deploy / -e kids-education-d8gak4uog7d6f09fa --yes
+          cloudbase hosting deploy _deploy /kids-education -e kids-education-d8gak4uog7d6f09fa --yes
           echo "Hosting deployed."
