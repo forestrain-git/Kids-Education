@@ -53,4 +53,10 @@ jobs:
           cloudbase login --apiKeyId "$SECRET_ID" --apiKey "$SECRET_KEY"
           echo "Deploying to hosting..."
           cloudbase hosting deploy _deploy / -e kids-education-d8gak4uog7d6f09fa --yes
+
+          echo "Deploying redirect for old /kids-education path..."
+          mkdir -p _redirect/kids-education
+          echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/index.html"></head><body></body></html>' > _redirect/kids-education/index.html
+          cloudbase hosting deploy _redirect/kids-education /kids-education -e kids-education-d8gak4uog7d6f09fa --yes || true
+
           echo "Hosting deployed."
