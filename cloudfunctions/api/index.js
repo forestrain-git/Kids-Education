@@ -56,7 +56,7 @@ exports.main = async (event, context) => {
           };
         }
 
-        const res = await db.collection('user_states').where({ 'data.uid': uid }).limit(1).get();
+        const res = await db.collection('user_states').where({ uid }).limit(1).get();
         const doc = res.data[0];
 
         return {
@@ -89,18 +89,24 @@ exports.main = async (event, context) => {
           };
         }
 
-        const existing = await db.collection('user_states').where({ 'data.uid': uid }).limit(1).get();
+        const existing = await db.collection('user_states').where({ uid }).limit(1).get();
         if (existing.data.length > 0) {
-          await db.collection('user_states').doc(existing.data[0]._id).remove();
+          await db.collection('user_states').doc(existing.data[0]._id).update({
+            data: {
+              data,
+              updatedAt: db.serverDate(),
+            },
+          });
+        } else {
+          await db.collection('user_states').add({
+            data: {
+              uid,
+              data,
+              createdAt: db.serverDate(),
+              updatedAt: db.serverDate(),
+            },
+          });
         }
-        await db.collection('user_states').add({
-          data: {
-            uid,
-            data,
-            createdAt: db.serverDate(),
-            updatedAt: db.serverDate(),
-          },
-        });
         return {
           statusCode: 200,
           headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
