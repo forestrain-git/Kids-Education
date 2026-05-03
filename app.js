@@ -620,6 +620,10 @@ var UI = {
 
   init() {
     this.bindNavEvents();
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) {
+      backBtn.addEventListener('click', () => this.showPage('home'));
+    }
     this.showPage('home');
   },
 
@@ -642,6 +646,8 @@ var UI = {
     const titles = { home: '今日任务', map: '知识地图', review: '错题本', settings: '设置' };
     document.getElementById('page-title').textContent = titles[page] || '';
     document.getElementById('nav').style.display = 'flex';
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) backBtn.style.display = 'none';
 
     const main = document.getElementById('main-content');
     main.innerHTML = '';
@@ -755,6 +761,8 @@ var UI = {
 
     document.getElementById('page-title').textContent = `第 ${this.currentQuizIndex + 1}/${total} 题`;
     document.getElementById('nav').style.display = 'none';
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) backBtn.style.display = 'block';
 
     main.innerHTML = `
       <div class="quiz-page">

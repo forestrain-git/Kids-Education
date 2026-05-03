@@ -33,6 +33,19 @@ header {
 header h1 {
   font-size: 18px; font-weight: 600;
 }
+#back-btn {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #475569;
+  cursor: pointer;
+  padding: 8px;
+  display: none;
+}
 
 /* ========== 主内容区 ========== */
 main {
@@ -455,6 +468,7 @@ main > div { animation: fadeIn 0.25s ease; }
 
 <div id="app">
   <header>
+    <button id="back-btn">←</button>
     <h1 id="page-title">今日任务</h1>
   </header>
 
