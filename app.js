@@ -821,7 +821,8 @@ var UI = {
     if (correct) this.sessionCorrectStreak++;
     else this.sessionCorrectStreak = 0;
 
-    // 保存答题状态，等用户看完解析/选好标签后再记录
+    // 立即持久化进度（tag 稍后由 selectTag 修补，避免提交后退出导致整题白做）
+    Engine.recordAnswer(q.id, correct, timeSpent, null, this.sessionCorrectStreak);
     this.currentAnswer = { questionId: q.id, correct, selectedText, timeSpent };
 
     // 更新选项样式
@@ -901,17 +902,36 @@ var UI = {
   selectedTag: null,
 
   selectTag(btn) {
-    this.selectedTag = btn.dataset.tag;
+    const newTag = btn.dataset.tag;
     document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
+
+    // 修补已记录的最后一条 history（submitAnswer 时已落盘，但 tag 当时为 null）
+    if (this.currentAnswer) {
+      const state = Storage.getState();
+      const last = state.history[state.history.length - 1];
+      if (last && last.questionId === this.currentAnswer.questionId) {
+        const q = ALL_QUESTIONS.find(qq => qq.id === last.questionId);
+        const nodeId = q ? q.knowledge_node_id : null;
+        // 撤销旧 tag 的统计（用户可能切换 tag）
+        if (last.answerTag && nodeId && state.tagStats[nodeId] && state.tagStats[nodeId][last.answerTag]) {
+          state.tagStats[nodeId][last.answerTag]--;
+          if (state.tagStats[nodeId][last.answerTag] <= 0) delete state.tagStats[nodeId][last.answerTag];
+        }
+        last.answerTag = newTag;
+        if (nodeId) {
+          if (!state.tagStats[nodeId]) state.tagStats[nodeId] = {};
+          state.tagStats[nodeId][newTag] = (state.tagStats[nodeId][newTag] || 0) + 1;
+          state.answerTags[last.questionId] = newTag;
+        }
+        Storage.saveState(state);
+      }
+    }
+    this.selectedTag = newTag;
   },
 
   nextQuestion() {
-    // 记录答案（包含标签）
-    if (this.currentAnswer) {
-      const tag = !this.currentAnswer.correct ? this.selectedTag : null;
-      Engine.recordAnswer(this.currentAnswer.questionId, this.currentAnswer.correct, this.currentAnswer.timeSpent, tag, this.sessionCorrectStreak);
-    }
+    // 进度已在 submitAnswer / selectTag 持久化，此处仅切题
     this.currentAnswer = null;
     this.selectedTag = null;
 
