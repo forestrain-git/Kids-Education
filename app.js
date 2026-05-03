@@ -326,6 +326,12 @@ var Engine = {
     const usedIds = new Set();
     const NODE_LIMIT = 10; // 每个知识点最多出10题
 
+    // 今日已答过的题不再重复推荐（避免刷新后立刻重出）
+    const today = new Date().toISOString().split('T')[0];
+    state.history.forEach(h => {
+      if (h.timestamp && h.timestamp.startsWith(today)) usedIds.add(h.questionId);
+    });
+
     // 收集各知识点的错题
     const wrongByNode = {};
     state.wrongQuestions.forEach(id => {
@@ -737,7 +743,10 @@ var UI = {
 
   // -------- 答题 --------
   startQuiz() {
-    this.quizQueue = Engine.getRecommendedQuestions();
+    const stats = Engine.getStats();
+    const remaining = stats.dailyGoal - stats.todayQuestions;
+    const count = remaining > 0 ? remaining : stats.dailyGoal;
+    this.quizQueue = Engine.getRecommendedQuestions(count);
     this.currentQuizIndex = 0;
     this.showQuizPage();
   },
