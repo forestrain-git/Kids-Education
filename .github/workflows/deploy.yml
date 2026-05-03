@@ -29,6 +29,9 @@ jobs:
           echo "Creating cloud function 'api' if not exists..."
           cloudbase fn create api --runTime Nodejs18 --memorySize 128 --timeout 5 --yes || echo "Create step done (may already exist)"
 
+          echo "Installing cloud function dependencies..."
+          cd cloudfunctions/api && npm install && cd ../..
+
           echo "Deploying cloud function 'api'..."
           cloudbase fn deploy api --yes --force || echo "Function deploy skipped (trigger restriction)"
           echo "Cloud function step done."
