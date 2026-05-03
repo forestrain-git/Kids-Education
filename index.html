@@ -494,6 +494,12 @@ main > div { animation: fadeIn 0.25s ease; }
     return;
   }
 
+  // 微信内置浏览器：跳过 uid 生成和 URL 修改，避免被拦截
+  const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+  if (isWeChat) {
+    return;
+  }
+
   function syncState(uid) {
     if (typeof CloudSync === 'undefined') return;
     CloudSync.getState(uid).then(function (remote) {
