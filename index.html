@@ -486,17 +486,11 @@ main > div { animation: fadeIn 0.25s ease; }
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
-  let uid = params.get('uid');
+  const urlUid = params.get('uid');
 
-  // 本地开发/测试环境：无 uid 且不强制测试时跳过 generateUid 重定向
+  // 本地开发/测试环境：不强制测试时跳过同步
   const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-  if (isLocalhost && !uid && params.get('cloudSyncTest') !== '1') {
-    return;
-  }
-
-  // 微信内置浏览器：跳过 uid 生成和 URL 修改，避免被拦截
-  const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
-  if (isWeChat) {
+  if (isLocalhost && params.get('cloudSyncTest') !== '1') {
     return;
   }
 
@@ -509,21 +503,25 @@ main > div { animation: fadeIn 0.25s ease; }
     }).catch(function () {});
   }
 
+  // 优先级：URL uid > localStorage uid
+  var uid = urlUid || localStorage.getItem('cloud_sync_uid');
+
   if (!uid) {
+    // 首次使用：生成 uid，存入 localStorage，同步
     if (typeof CloudSync !== 'undefined') {
       CloudSync.generateUid().then(function (res) {
         if (res && res.uid) {
-          var newUrl = location.pathname + '?uid=' + encodeURIComponent(res.uid);
-          if (history.replaceState) {
-            history.replaceState(null, '', newUrl);
-            syncState(res.uid);
-          } else {
-            location.href = newUrl;
-          }
+          localStorage.setItem('cloud_sync_uid', res.uid);
+          syncState(res.uid);
         }
       }).catch(function () {});
     }
     return;
+  }
+
+  // URL 有 uid 但 localStorage 没有：保存到 localStorage
+  if (urlUid && !localStorage.getItem('cloud_sync_uid')) {
+    localStorage.setItem('cloud_sync_uid', urlUid);
   }
 
   syncState(uid);
