@@ -101,7 +101,7 @@ var Storage = {
 
   saveState(state) {
     localStorage.setItem(this.KEY, JSON.stringify(state));
-    const uid = new URLSearchParams(location.search).get('uid');
+    const uid = localStorage.getItem('cloud_sync_uid') || new URLSearchParams(location.search).get('uid');
     if (uid && typeof CloudSync !== 'undefined') {
       CloudSync.saveState(uid, state).catch(function () {});
     }

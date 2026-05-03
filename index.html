@@ -494,8 +494,19 @@ main > div { animation: fadeIn 0.25s ease; }
     return;
   }
 
+  function getCookie(name) {
+    var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : null;
+  }
+  function setCookie(name, value, days) {
+    var expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/';
+  }
+
   function syncState(uid) {
     if (typeof CloudSync === 'undefined') return;
+    // 如果本地已有学习数据，不要覆盖（防止云端空数据把本地进度抹掉）
+    if (localStorage.getItem('physics_learning_state_v1')) return;
     CloudSync.getState(uid).then(function (remote) {
       if (remote && remote.data) {
         localStorage.setItem('physics_learning_state_v1', JSON.stringify(remote.data));
@@ -503,15 +514,16 @@ main > div { animation: fadeIn 0.25s ease; }
     }).catch(function () {});
   }
 
-  // 优先级：URL uid > localStorage uid
-  var uid = urlUid || localStorage.getItem('cloud_sync_uid');
+  // 优先级：URL uid > localStorage uid > Cookie uid
+  var uid = urlUid || localStorage.getItem('cloud_sync_uid') || getCookie('cloud_sync_uid');
 
   if (!uid) {
-    // 首次使用：生成 uid，存入 localStorage，同步
+    // 首次使用：生成 uid，存入 localStorage + Cookie，同步
     if (typeof CloudSync !== 'undefined') {
       CloudSync.generateUid().then(function (res) {
         if (res && res.uid) {
           localStorage.setItem('cloud_sync_uid', res.uid);
+          setCookie('cloud_sync_uid', res.uid, 365);
           syncState(res.uid);
         }
       }).catch(function () {});
@@ -519,9 +531,14 @@ main > div { animation: fadeIn 0.25s ease; }
     return;
   }
 
-  // URL 有 uid 但 localStorage 没有：保存到 localStorage
-  if (urlUid && !localStorage.getItem('cloud_sync_uid')) {
+  // URL 有 uid：同步保存到 localStorage 和 Cookie
+  if (urlUid) {
     localStorage.setItem('cloud_sync_uid', urlUid);
+    setCookie('cloud_sync_uid', urlUid, 365);
+  }
+  // localStorage 有 uid 但 Cookie 没有：补存 Cookie
+  if (localStorage.getItem('cloud_sync_uid') && !getCookie('cloud_sync_uid')) {
+    setCookie('cloud_sync_uid', localStorage.getItem('cloud_sync_uid'), 365);
   }
 
   syncState(uid);
