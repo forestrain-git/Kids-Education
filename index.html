@@ -494,22 +494,33 @@ main > div { animation: fadeIn 0.25s ease; }
     return;
   }
 
+  function syncState(uid) {
+    if (typeof CloudSync === 'undefined') return;
+    CloudSync.getState(uid).then(function (remote) {
+      if (remote && remote.data) {
+        localStorage.setItem('physics_learning_state_v1', JSON.stringify(remote.data));
+      }
+    }).catch(function () {});
+  }
+
   if (!uid) {
     if (typeof CloudSync !== 'undefined') {
       CloudSync.generateUid().then(function (res) {
         if (res && res.uid) {
-          location.href = location.pathname + '?uid=' + encodeURIComponent(res.uid);
+          var newUrl = location.pathname + '?uid=' + encodeURIComponent(res.uid);
+          if (history.replaceState) {
+            history.replaceState(null, '', newUrl);
+            syncState(res.uid);
+          } else {
+            location.href = newUrl;
+          }
         }
       }).catch(function () {});
     }
     return;
   }
 
-  CloudSync.getState(uid).then(function (remote) {
-    if (remote && remote.data) {
-      localStorage.setItem('physics_learning_state_v1', JSON.stringify(remote.data));
-    }
-  }).catch(function () {});
+  syncState(uid);
 })();
 </script>
 <script src="data.js?v=3"></script>
