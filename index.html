@@ -35,16 +35,21 @@ header h1 {
 }
 #back-btn {
   position: absolute;
-  left: 16px;
+  left: 8px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
-  font-size: 20px;
-  color: #475569;
+  font-size: 14px;
+  color: #2563EB;
   cursor: pointer;
-  padding: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
   display: none;
+  line-height: 1;
+}
+#back-btn:hover {
+  background: #F1F5F9;
 }
 
 /* ========== 主内容区 ========== */
@@ -468,7 +473,7 @@ main > div { animation: fadeIn 0.25s ease; }
 
 <div id="app">
   <header>
-    <button id="back-btn">←</button>
+    <button id="back-btn">&lt; 返回</button>
     <h1 id="page-title">今日任务</h1>
   </header>
 
