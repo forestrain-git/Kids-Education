@@ -74,6 +74,12 @@ var Storage = {
         const state = JSON.parse(raw);
         // 向后兼容：旧数据缺少 dailyAchievements
         if (!state.dailyAchievements) state.dailyAchievements = {};
+        // 数据迁移：v1 -> v2，dailyGoal 30 -> 100
+        if (!state.version || state.version < 2) {
+          if (state.dailyGoal === 30) state.dailyGoal = 100;
+          state.version = 2;
+          this.saveState(state);
+        }
         return state;
       } catch(e) { console.error('Parse error', e); }
     }
@@ -96,6 +102,7 @@ var Storage = {
       tagStats: {},      // { nodeId: { '概念不清': 3, '粗心大意': 1 } }
       lastStudyDate: null,
       streak: 0,
+      version: 2,
     };
   },
 
