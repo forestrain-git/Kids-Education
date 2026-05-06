@@ -1,6 +1,7 @@
 // ============================================
-// 物理提分助手 - 核心逻辑层
+// 物理提分助手 - 核心逻辑层 (v9)
 // ============================================
+console.log('[App] loaded v9');
 
 // 合并题库
 var ALL_QUESTIONS = [...UPPER_QUESTIONS, ...MECH_QUESTIONS, ...EXTRA_QUESTIONS];
