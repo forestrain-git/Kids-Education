@@ -102,11 +102,11 @@ var EXTRA_QUESTIONS = [
   {
     id: 'ex_011', knowledge_node_id: 'motion_speed', chapter: '机械运动', section: '速度',
     difficulty: 2, type: 'choice',
-    content: '甲乙两车从同一地点同时出发，甲的速度是60km/h，乙的速度是15m/s。5分钟后，两车相距？',
-    options: ['0km', '2.5km', '5km', '10km'],
-    answer: '0km',
-    explanation: '15m/s = 54km/h。两车速度不同，但题目说"同时出发"，方向未知。如果同向，距离 = (60-54)×(5/60) = 0.5km。但题目没有说方向，如果是同地同向则距离0.5km，选项中没有。如果反向则距离更大。但选项中有0km，可能题目默认同速（数据有误）。实际上15m/s=54km/h，5分钟同向距离为0.5km，选项无。此题按"速度相同"处理或题目设计为0km（同速情况）。',
-    hints: ['先把乙的速度换算成km/h。', '15m/s等于多少km/h？', '15m/s = 54km/h，两车速度接近但不同，5分钟同向行驶相距约0.5km。但选项中最合理的是0km（可能题目假设速度相同）。']
+    content: '甲乙两车从同一地点同时出发同向行驶，甲的速度是60km/h，乙的速度是15m/s。5分钟后，两车相距约？',
+    options: ['0km', '0.5km', '1km', '2km'],
+    answer: '0.5km',
+    explanation: '15m/s = 54km/h。两车同向行驶，速度差 = 60 - 54 = 6km/h。5分钟 = 5/60 h = 1/12 h。相距 = 6 × 1/12 = 0.5km。',
+    hints: ['先把乙的速度换算成km/h。', '15m/s = 54km/h。', '速度差 × 时间 = 距离差。']
   },
   {
     id: 'ex_012', knowledge_node_id: 'motion_speed', chapter: '机械运动', section: '速度',
@@ -142,9 +142,9 @@ var EXTRA_QUESTIONS = [
     difficulty: 2, type: 'choice',
     content: '某同学测量小车平均速度，测得前半程用时3s，后半程用时2s。若全程路程为1m，则后半程平均速度是？',
     options: ['0.2m/s', '0.25m/s', '0.4m/s', '0.5m/s'],
-    answer: '0.4m/s',
-    explanation: '后半程路程 = 0.5m，时间 = 2s，平均速度 = 0.5m/2s = 0.25m/s。等等，全程1m，半程0.5m，0.5/2=0.25m/s。答案应该是0.25m/s。但选项中没有0.25？让我重新检查... 哦，选项B是0.25m/s。',
-    hints: ['后半程的路程是多少？', '全程1m，半程就是0.5m。', '后半程路程 = 0.5m，时间 = 2s，平均速度 = 0.5m / 2s = 0.25m/s。']
+    answer: '0.25m/s',
+    explanation: '全程1m，前半程和后半程各0.5m。后半程平均速度 = 路程 / 时间 = 0.5m / 2s = 0.25m/s。',
+    hints: ['后半程的路程是多少？', '全程1m，半程就是0.5m。', '后半程平均速度 = 0.5m / 2s = 0.25m/s。']
   },
   {
     id: 'ex_016', knowledge_node_id: 'motion_avg_speed', chapter: '机械运动', section: '平均速度测量',
