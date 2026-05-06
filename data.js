@@ -39,6 +39,55 @@ var KNOWLEDGE_NODES = [
   { id: 'friction_concept', name: '摩擦力', chapter: '力与运动', semester: '下', order: 27, prerequisites: ['force_concept'] },
   { id: 'friction_factors', name: '影响摩擦力的因素', chapter: '力与运动', semester: '下', order: 28, prerequisites: ['friction_concept'] },
   { id: 'friction_application', name: '摩擦力的应用', chapter: '力与运动', semester: '下', order: 29, prerequisites: ['friction_factors'] },
+
+  // 八上 质量与密度
+  { id: 'mass_concept', name: '质量', chapter: '质量与密度', semester: '上', order: 30, prerequisites: [] },
+  { id: 'density_concept', name: '密度', chapter: '质量与密度', semester: '上', order: 31, prerequisites: ['mass_concept'] },
+  { id: 'density_measurement', name: '密度测量', chapter: '质量与密度', semester: '上', order: 32, prerequisites: ['density_concept'] },
+  { id: 'density_application', name: '密度应用', chapter: '质量与密度', semester: '上', order: 33, prerequisites: ['density_concept'] },
+
+  // 八上 光现象
+  { id: 'light_propagation', name: '光的直线传播', chapter: '光现象', semester: '上', order: 34, prerequisites: [] },
+  { id: 'light_reflection', name: '光的反射', chapter: '光现象', semester: '上', order: 35, prerequisites: ['light_propagation'] },
+  { id: 'light_mirror', name: '平面镜成像', chapter: '光现象', semester: '上', order: 36, prerequisites: ['light_reflection'] },
+  { id: 'light_refraction', name: '光的折射', chapter: '光现象', semester: '上', order: 37, prerequisites: ['light_propagation'] },
+  { id: 'light_lens', name: '透镜', chapter: '光现象', semester: '上', order: 38, prerequisites: ['light_refraction'] },
+  { id: 'light_eye', name: '眼睛和眼镜', chapter: '光现象', semester: '上', order: 39, prerequisites: ['light_lens'] },
+
+  // 八下 压强
+  { id: 'pressure_concept', name: '压强', chapter: '压强', semester: '下', order: 40, prerequisites: ['force_concept'] },
+  { id: 'pressure_liquid', name: '液体压强', chapter: '压强', semester: '下', order: 41, prerequisites: ['pressure_concept'] },
+  { id: 'pressure_atmosphere', name: '大气压强', chapter: '压强', semester: '下', order: 42, prerequisites: ['pressure_liquid'] },
+  { id: 'pressure_fluid', name: '流体压强与流速', chapter: '压强', semester: '下', order: 43, prerequisites: ['pressure_atmosphere'] },
+
+  // 八下 浮力
+  { id: 'buoyancy_concept', name: '浮力', chapter: '浮力', semester: '下', order: 44, prerequisites: ['pressure_liquid'] },
+  { id: 'buoyancy_archimedes', name: '阿基米德原理', chapter: '浮力', semester: '下', order: 45, prerequisites: ['buoyancy_concept'] },
+  { id: 'buoyancy_float', name: '浮沉条件', chapter: '浮力', semester: '下', order: 46, prerequisites: ['buoyancy_archimedes', 'density_concept'] },
+  { id: 'buoyancy_application', name: '浮力应用', chapter: '浮力', semester: '下', order: 47, prerequisites: ['buoyancy_float'] },
+
+  // 八下 功和机械能
+  { id: 'work_concept', name: '功', chapter: '功和机械能', semester: '下', order: 48, prerequisites: ['force_concept'] },
+  { id: 'power_concept', name: '功率', chapter: '功和机械能', semester: '下', order: 49, prerequisites: ['work_concept'] },
+  { id: 'energy_kinetic', name: '动能和势能', chapter: '功和机械能', semester: '下', order: 50, prerequisites: ['work_concept'] },
+  { id: 'energy_conservation', name: '机械能守恒', chapter: '功和机械能', semester: '下', order: 51, prerequisites: ['energy_kinetic'] },
+
+  // 八下 简单机械
+  { id: 'lever', name: '杠杆', chapter: '简单机械', semester: '下', order: 52, prerequisites: ['force_concept'] },
+  { id: 'pulley', name: '滑轮', chapter: '简单机械', semester: '下', order: 53, prerequisites: ['lever'] },
+  { id: 'mechanical_efficiency', name: '机械效率', chapter: '简单机械', semester: '下', order: 54, prerequisites: ['work_concept', 'pulley'] },
+
+  // 九年级 电学
+  { id: 'electric_charge', name: '电荷', chapter: '电学', semester: '九', order: 55, prerequisites: [] },
+  { id: 'electric_circuit', name: '电路', chapter: '电学', semester: '九', order: 56, prerequisites: ['electric_charge'] },
+  { id: 'electric_current', name: '电流', chapter: '电学', semester: '九', order: 57, prerequisites: ['electric_circuit'] },
+  { id: 'electric_voltage', name: '电压', chapter: '电学', semester: '九', order: 58, prerequisites: ['electric_circuit'] },
+  { id: 'electric_resistance', name: '电阻', chapter: '电学', semester: '九', order: 59, prerequisites: ['electric_current'] },
+  { id: 'ohms_law', name: '欧姆定律', chapter: '电学', semester: '九', order: 60, prerequisites: ['electric_current', 'electric_voltage', 'electric_resistance'] },
+  { id: 'electric_power', name: '电功率', chapter: '电学', semester: '九', order: 61, prerequisites: ['ohms_law'] },
+  { id: 'joules_law', name: '焦耳定律', chapter: '电学', semester: '九', order: 62, prerequisites: ['electric_power'] },
+  { id: 'home_circuit', name: '家庭电路', chapter: '电学', semester: '九', order: 63, prerequisites: ['electric_power'] },
+  { id: 'electric_magnet', name: '电与磁', chapter: '电学', semester: '九', order: 64, prerequisites: ['electric_current'] },
 ];
 
 var CHAPTERS = [
@@ -46,6 +95,13 @@ var CHAPTERS = [
   { name: '声现象', semester: '上', nodes: ['sound_production', 'sound_characteristics', 'sound_utilization', 'sound_noise'] },
   { name: '物态变化', semester: '上', nodes: ['temp_measurement', 'phase_melt', 'phase_vapor', 'phase_sublime'] },
   { name: '力与运动', semester: '下', nodes: ['force_concept', 'force_effect', 'force_interaction', 'elastic_concept', 'elastic_measurement', 'elastic_hooke', 'gravity_concept', 'gravity_calculation', 'gravity_center', 'newton_first', 'inertia_concept', 'inertia_application', 'balance_condition', 'balance_friction', 'friction_concept', 'friction_factors', 'friction_application'] },
+  { name: '质量与密度', semester: '上', nodes: ['mass_concept', 'density_concept', 'density_measurement', 'density_application'] },
+  { name: '光现象', semester: '上', nodes: ['light_propagation', 'light_reflection', 'light_mirror', 'light_refraction', 'light_lens', 'light_eye'] },
+  { name: '压强', semester: '下', nodes: ['pressure_concept', 'pressure_liquid', 'pressure_atmosphere', 'pressure_fluid'] },
+  { name: '浮力', semester: '下', nodes: ['buoyancy_concept', 'buoyancy_archimedes', 'buoyancy_float', 'buoyancy_application'] },
+  { name: '功和机械能', semester: '下', nodes: ['work_concept', 'power_concept', 'energy_kinetic', 'energy_conservation'] },
+  { name: '简单机械', semester: '下', nodes: ['lever', 'pulley', 'mechanical_efficiency'] },
+  { name: '电学', semester: '九', nodes: ['electric_charge', 'electric_circuit', 'electric_current', 'electric_voltage', 'electric_resistance', 'ohms_law', 'electric_power', 'joules_law', 'home_circuit', 'electric_magnet'] },
 ];
 
 // ============================================

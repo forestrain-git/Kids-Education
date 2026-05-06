@@ -4,7 +4,7 @@
 console.log('[App] loaded v9');
 
 // 合并题库
-var ALL_QUESTIONS = [...UPPER_QUESTIONS, ...MECH_QUESTIONS, ...EXTRA_QUESTIONS, ...PRESSURE_QUESTIONS];
+var ALL_QUESTIONS = [...UPPER_QUESTIONS, ...MECH_QUESTIONS, ...EXTRA_QUESTIONS];
 
 // 题目标签映射（按知识点自动标注）
 var TAG_MAP = {
