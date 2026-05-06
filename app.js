@@ -91,7 +91,7 @@ var Storage = {
       firstUse: new Date().toISOString().split('T')[0],
       totalAnswered: 0,
       totalCorrect: 0,
-      dailyGoal: 30,
+      dailyGoal: 100,
       answerTags: {},    // { questionId: '概念不清' }
       tagStats: {},      // { nodeId: { '概念不清': 3, '粗心大意': 1 } }
       lastStudyDate: null,
@@ -1090,7 +1090,7 @@ var UI = {
           <div class="setting-label">每日目标</div>
           <div class="setting-desc">每天推荐的练习题目数量</div>
           <div class="goal-btns">
-            ${[10, 20, 30, 50].map(n => `
+            ${[30, 50, 100, 150].map(n => `
               <button class="goal-btn ${state.dailyGoal === n ? 'active' : ''}" onclick="UI.setDailyGoal(${n})">${n} 题</button>
             `).join('')}
           </div>
