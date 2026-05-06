@@ -4,7 +4,7 @@
 console.log('[App] loaded v9');
 
 // 合并题库
-var ALL_QUESTIONS = [...UPPER_QUESTIONS, ...MECH_QUESTIONS, ...EXTRA_QUESTIONS];
+var ALL_QUESTIONS = [...UPPER_QUESTIONS, ...MECH_QUESTIONS, ...EXTRA_QUESTIONS, ...PRESSURE_QUESTIONS];
 
 // 题目标签映射（按知识点自动标注）
 var TAG_MAP = {
@@ -37,6 +37,48 @@ var TAG_MAP = {
   'friction_concept': ['概念型'],
   'friction_factors': ['实验型', '概念型'],
   'friction_application': ['应用型', '概念型'],
+  // 质量与密度
+  'mass_concept': ['概念型', '实验型'],
+  'density_concept': ['概念型', '计算型'],
+  'density_measurement': ['实验型', '计算型'],
+  'density_application': ['应用型', '计算型'],
+  // 光现象
+  'light_propagation': ['概念型'],
+  'light_reflection': ['概念型', '辨析型'],
+  'light_mirror': ['概念型', '实验型'],
+  'light_refraction': ['概念型', '辨析型'],
+  'light_lens': ['概念型', '实验型'],
+  'light_eye': ['应用型', '辨析型'],
+  // 压强
+  'pressure_concept': ['概念型', '计算型'],
+  'pressure_liquid': ['概念型', '计算型'],
+  'pressure_atmosphere': ['概念型', '实验型'],
+  'pressure_fluid': ['概念型', '应用型'],
+  // 浮力
+  'buoyancy_concept': ['概念型', '实验型'],
+  'buoyancy_archimedes': ['概念型', '计算型'],
+  'buoyancy_float': ['概念型', '辨析型'],
+  'buoyancy_application': ['应用型', '辨析型'],
+  // 功和机械能
+  'work_concept': ['概念型', '计算型'],
+  'power_concept': ['概念型', '计算型'],
+  'energy_kinetic': ['概念型', '辨析型'],
+  'energy_conservation': ['概念型', '辨析型'],
+  // 简单机械
+  'lever': ['概念型', '计算型'],
+  'pulley': ['概念型', '计算型'],
+  'mechanical_efficiency': ['概念型', '计算型'],
+  // 电学
+  'electric_charge': ['概念型', '实验型'],
+  'electric_circuit': ['概念型', '辨析型'],
+  'electric_current': ['概念型', '实验型'],
+  'electric_voltage': ['概念型', '实验型'],
+  'electric_resistance': ['概念型', '实验型'],
+  'ohms_law': ['概念型', '计算型'],
+  'electric_power': ['概念型', '计算型'],
+  'joules_law': ['概念型', '计算型'],
+  'home_circuit': ['应用型', '辨析型'],
+  'electric_magnet': ['概念型', '应用型'],
 };
 ALL_QUESTIONS.forEach(q => {
   q.tags = TAG_MAP[q.knowledge_node_id] || ['概念型'];
